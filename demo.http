@@ -1,0 +1,30 @@
+
+### 获取用户信息
+POST http://localhost:8080/
+Content-Type: application/json
+
+{
+  "service": "cn.youyou.yyrpc.demo.api.UserService",
+  "method": "findById",
+  "args": [666]
+}
+
+### 获取订单信息
+POST http://localhost:8080/
+Content-Type: application/json
+
+{
+  "service": "cn.youyou.yyrpc.demo.api.OrderService",
+  "method": "findById",
+  "args": [888]
+}
+
+### mock
+POST http://localhost:8080/
+Content-Type: application/json
+
+{
+  "service": "cn.youyou.yyrpc.demo.api.UserService",
+  "method": "hashCode",
+  "args": []
+}
