@@ -5,8 +5,8 @@ Content-Type: application/json
 
 {
   "service": "cn.youyou.yyrpc.demo.api.UserService",
-  "method": "findById",
-  "args": [666]
+  "methodSign": "findById@1_int",
+  "args": [66677]
 }
 
 ### 获取订单信息
@@ -15,7 +15,7 @@ Content-Type: application/json
 
 {
   "service": "cn.youyou.yyrpc.demo.api.OrderService",
-  "method": "findById",
+  "methodSign": "findById@1_java.lang.Integer",
   "args": [888]
 }
 
@@ -25,6 +25,6 @@ Content-Type: application/json
 
 {
   "service": "cn.youyou.yyrpc.demo.api.UserService",
-  "method": "hashCode",
+  "methodSign": "hashCode",
   "args": []
 }

@@ -22,6 +22,7 @@
         <module>yyrpc-core</module>
         <module>yyrpc-demo-api</module>
         <module>yyrpc-demo-provider</module>
+        <module>yyrpc-demo-consumer</module>
     </modules>
 
     <build>
