@@ -4,6 +4,7 @@ package cn.youyou.yyrpc.core.consumer;
 import cn.youyou.yyrpc.core.api.RpcRequest;
 import cn.youyou.yyrpc.core.api.RpcResponse;
 import cn.youyou.yyrpc.core.util.MethodUtils;
+import cn.youyou.yyrpc.core.util.TypeUtils;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -41,9 +42,9 @@ public class YYConsumerInvocationHandler implements InvocationHandler {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-
         // 方法过滤，类似toString方法
         if (MethodUtils.checkLocalMethod(method)) {
+            System.out.println("过滤掉原生方法，methodName = " + method.getName());
             return null;
         }
 
@@ -51,7 +52,7 @@ public class YYConsumerInvocationHandler implements InvocationHandler {
         RpcResponse rpcResponse = remoteCall(method, args);
 
         // 结果反解析
-        return returnTypeParse(rpcResponse, method.getReturnType());
+        return returnTypeParse(rpcResponse, method);
     }
 
     private RpcResponse remoteCall(Method method, Object[] args) {
@@ -59,7 +60,6 @@ public class YYConsumerInvocationHandler implements InvocationHandler {
         rpcRequest.setService(service.getCanonicalName());
         rpcRequest.setMethodSign(MethodUtils.methodSign(method));
         rpcRequest.setArgs(args);
-
         return post(rpcRequest);
     }
 
@@ -71,7 +71,6 @@ public class YYConsumerInvocationHandler implements InvocationHandler {
                 .url("http://localhost:8080/")
                 .post(RequestBody.create(reqJson, JSON_TYPE))
                 .build();
-
         try {
             String respJson = client.newCall(request).execute().body().string();
             System.out.println(" ===> respJson = " + respJson);
@@ -83,78 +82,70 @@ public class YYConsumerInvocationHandler implements InvocationHandler {
         }
     }
 
-    private Object returnTypeParse(RpcResponse rpcResponse, Class<?> returnType) {
+    /**
+     * TODO: 这里面的反序列化肯定还是有问题的，后续再优化了
+     * @param rpcResponse
+     * @param method
+     * @return
+     */
+    private Object returnTypeParse(RpcResponse rpcResponse, Method method) {
         if (rpcResponse.isStatus()) {
+            Class<?> returnType = method.getReturnType();
             // 反解析RpcResponse里的data数据到对应的数据类型
             Object data = rpcResponse.getData();
             System.out.println("method.getReturnType() = " + returnType + ", data value = " + data);
-            return data;
 
-
+            // 请求端发起请求，接受来自服务端的返回时，对象在通过http接受时会被序列化成JSONObject
+            if (data instanceof JSONObject jsonObject) {
+                if (Map.class.isAssignableFrom(returnType)) {
+                    Map resultMap = new HashMap();
+                    Type genericReturnType = method.getGenericReturnType();
+                    if (genericReturnType instanceof ParameterizedType parameterizedType) {
+                        Type keyType = parameterizedType.getActualTypeArguments()[0];
+                        Type valueType = parameterizedType.getActualTypeArguments()[1];
+                        jsonObject.forEach((key, value) -> {
+                            Object keyObject = TypeUtils.cast(key, (Class<?>) keyType);
+                            Object valueObject = TypeUtils.cast(value, (Class<?>) valueType);
+                            resultMap.put(keyObject, valueObject);
+                        });
+                    }
+                    return resultMap;
+                }
+                return jsonObject.toJavaObject(returnType);
+            } else if (data instanceof JSONArray jsonArray) {
+                Object[] array = jsonArray.toArray();
+                if (returnType.isArray()) { // 请求端发起请求，接受来自服务端的返回时，数组类型会被系列化成jsonArray
+                    Class<?> componentType = returnType.getComponentType();
+                    Object resultArray = Array.newInstance(componentType, array.length);
+                    for (int i = 0; i < array.length; i++) {
+                        Array.set(resultArray, i, array[i]);
+                    }
+                    return resultArray;
+                } else if (List.class.isAssignableFrom(returnType)) { // 请求端发起请求，接受来自服务端的返回时，List类型会变成jsonArray
+                    List<Object> resultList = new ArrayList<>(array.length);
+                    Type genericReturnType = method.getGenericReturnType();
+                    System.out.println(genericReturnType);
+                    if (genericReturnType instanceof ParameterizedType parameterizedType) {
+                        Type actualType = parameterizedType.getActualTypeArguments()[0];
+                        System.out.println(actualType);
+                        for (Object o : array) {
+                            resultList.add(TypeUtils.cast(o, (Class<?>) actualType));
+                        }
+                    } else {
+                        resultList.addAll(Arrays.asList(array));
+                    }
+                    return resultList;
+                }else {
+                    return null;
+                }
+            } else {
+                // 基础类型转换
+                return TypeUtils.cast(data, returnType);
+            }
         } else {
             Exception ex = rpcResponse.getEx();
             //ex.printStackTrace();
             throw new RuntimeException(ex);
         }
-
-
-//        if (rpcResponse.isStatus()) {
-//            Object data = rpcResponse.getData();
-//            System.out.println("method.getReturnType() = " + returnType);
-//            if (data instanceof JSONObject jsonResult) {
-//                if (Map.class.isAssignableFrom(type)) {
-//                    Map resultMap = new HashMap();
-//                    Type genericReturnType = method.getGenericReturnType();
-//                    System.out.println(genericReturnType);
-//                    if (genericReturnType instanceof ParameterizedType parameterizedType) {
-//                        Class<?> keyType = (Class<?>)parameterizedType.getActualTypeArguments()[0];
-//                        Class<?> valueType = (Class<?>)parameterizedType.getActualTypeArguments()[1];
-//                        System.out.println("keyType  : " + keyType);
-//                        System.out.println("valueType: " + valueType);
-//                        jsonResult.entrySet().stream().forEach(
-//                                e -> {
-//                                    Object key = TypeUtils.cast(e.getKey(), keyType);
-//                                    Object value = TypeUtils.cast(e.getValue(), valueType);
-//                                    resultMap.put(key, value);
-//                                }
-//                        );
-//                    }
-//                    return resultMap;
-//                }
-//                return jsonResult.toJavaObject(type);
-//            } else if (data instanceof JSONArray jsonArray) {
-//                Object[] array = jsonArray.toArray();
-//                if (type.isArray()) {
-//                    Class<?> componentType = type.getComponentType();
-//                    Object resultArray = Array.newInstance(componentType, array.length);
-//                    for (int i = 0; i < array.length; i++) {
-//                        Array.set(resultArray, i, array[i]);
-//                    }
-//                    return resultArray;
-//                } else if (List.class.isAssignableFrom(type)) {
-//                    List<Object> resultList = new ArrayList<>(array.length);
-//                    Type genericReturnType = method.getGenericReturnType();
-//                    System.out.println(genericReturnType);
-//                    if (genericReturnType instanceof ParameterizedType parameterizedType) {
-//                        Type actualType = parameterizedType.getActualTypeArguments()[0];
-//                        System.out.println(actualType);
-//                        for (Object o : array) {
-//                            resultList.add(TypeUtils.cast(o, (Class<?>) actualType));
-//                        }
-//                    } else {
-//                        resultList.addAll(Arrays.asList(array));
-//                    }
-//                    return resultList;
-//                } else {
-//                    return null;
-//                }
-//            } else {
-//                return TypeUtils.cast(data, type);
-//            }
-//        } else {
-//            Exception ex = rpcResponse.getEx();
-//            //ex.printStackTrace();
-//            throw new RuntimeException(ex);
-//        }
     }
 }

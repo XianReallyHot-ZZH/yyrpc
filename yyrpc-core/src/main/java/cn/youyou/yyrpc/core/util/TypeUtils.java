@@ -1,9 +1,16 @@
 package cn.youyou.yyrpc.core.util;
 
+import com.alibaba.fastjson.JSONObject;
+
+import java.lang.reflect.Array;
+import java.util.HashMap;
+import java.util.List;
+
 public class TypeUtils {
 
     /**
      * 强制类型转换
+     * TODO：这里面强制类型转换有问题存在功能上的问题，后续碰到再优化
      * @param origin
      * @param type
      * @return
@@ -36,15 +43,29 @@ public class TypeUtils {
             return Boolean.valueOf(origin.toString());
         }
 
-        // 处理数据结构类型 数组
+        // 在Http请求的接收端接受到报文时，对象类型在接受的时候会变成hashMap，需要转成对象
+        if (origin instanceof HashMap map) {
+            JSONObject jsonObject = new JSONObject(map);
+            return jsonObject.toJavaObject(type);
+        }
 
-        // 处理数据结构类型 Map
+        // 请求端发送数组类型的参数，在服务接收端会以List接受，所以需要将Lsit转成数组
+        if (type.isArray()) {
+            if (origin instanceof List<?> list) {
+                origin = list.toArray();
+            }
+            int length = Array.getLength(origin);
+            Class<?> componentType = type.getComponentType();
+            Object resultArray = Array.newInstance(componentType, length);
+            for (int i = 0; i < length; i++) {
+                Array.set(resultArray, i, Array.get(origin, i));
+            }
+            return resultArray;
+        }
 
-
-
-
-
-
+        if (origin instanceof JSONObject jsonObject) {
+            return jsonObject.toJavaObject(type);
+        }
 
         return null;
     }
