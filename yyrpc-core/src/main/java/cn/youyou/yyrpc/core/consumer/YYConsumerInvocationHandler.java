@@ -1,6 +1,8 @@
 package cn.youyou.yyrpc.core.consumer;
 
 
+import cn.youyou.yyrpc.core.api.LoadBalancer;
+import cn.youyou.yyrpc.core.api.RpcContext;
 import cn.youyou.yyrpc.core.api.RpcRequest;
 import cn.youyou.yyrpc.core.api.RpcResponse;
 import cn.youyou.yyrpc.core.util.MethodUtils;
@@ -36,8 +38,14 @@ public class YYConsumerInvocationHandler implements InvocationHandler {
 
     private Class<?> service;
 
-    public YYConsumerInvocationHandler(Class<?> service) {
+    private RpcContext rpcContext;
+
+    private List<String> providers;
+
+    public YYConsumerInvocationHandler(Class<?> service, RpcContext rpcContext, List<String> providers) {
         this.service = service;
+        this.rpcContext = rpcContext;
+        this.providers = providers;
     }
 
     @Override
@@ -67,8 +75,11 @@ public class YYConsumerInvocationHandler implements InvocationHandler {
         String reqJson = JSON.toJSONString(rpcRequest);
         System.out.println(" ===> reqJson = " + reqJson);
 
+        String url = (String) rpcContext.getLoadBalancer().choose(rpcContext.getRouter().route(providers));
+        System.out.println("loadBalancer.choose(urls) ==> " + url);
+
         Request request = new Request.Builder()
-                .url("http://localhost:8080/")
+                .url(url)
                 .post(RequestBody.create(reqJson, JSON_TYPE))
                 .build();
         try {
@@ -118,7 +129,12 @@ public class YYConsumerInvocationHandler implements InvocationHandler {
                     Class<?> componentType = returnType.getComponentType();
                     Object resultArray = Array.newInstance(componentType, array.length);
                     for (int i = 0; i < array.length; i++) {
-                        Array.set(resultArray, i, array[i]);
+                        if (componentType.isPrimitive() || componentType.getPackageName().startsWith("java")) {
+                            Array.set(resultArray, i, Array.get(array, i));
+                        } else {
+                            Object castObject = TypeUtils.cast(Array.get(array, i), componentType);
+                            Array.set(resultArray, i, castObject);
+                        }
                     }
                     return resultArray;
                 } else if (List.class.isAssignableFrom(returnType)) { // 请求端发起请求，接受来自服务端的返回时，List类型会变成jsonArray

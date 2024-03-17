@@ -4,3 +4,6 @@ server:
 spring:
   application:
     name: yyrpc-demo-consumer
+
+yyrpc:
+  providers: http://localhost:8080,http://localhost:8081,http://localhost:8082

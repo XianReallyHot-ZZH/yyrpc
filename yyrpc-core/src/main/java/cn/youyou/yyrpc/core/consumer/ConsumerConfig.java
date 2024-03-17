@@ -1,13 +1,27 @@
 package cn.youyou.yyrpc.core.consumer;
 
+import cn.youyou.yyrpc.core.api.LoadBalancer;
+import cn.youyou.yyrpc.core.api.RegistryCenter;
+import cn.youyou.yyrpc.core.api.Router;
+import cn.youyou.yyrpc.core.cluster.RandomLoadBalancer;
+import cn.youyou.yyrpc.core.cluster.RoundRibonLoadBalancer;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 
+import java.util.List;
+
 @Configuration
 public class ConsumerConfig {
+
+    /**
+     * 临时先这么测
+     */
+    @Value("${yyrpc.providers}")
+    String servers;
 
     @Bean
     ConsumerBootstrap createConsumerBootstrap() {
@@ -30,6 +44,30 @@ public class ConsumerConfig {
                 System.out.println("consumerBootstrap end ...");
             }
         };
+    }
+
+    /**
+     * 临时先这么测
+     * @return
+     */
+    @Bean
+    public LoadBalancer loadBalancer() {
+        return new RoundRibonLoadBalancer();
+//        return new RandomLoadBalancer();
+    }
+
+    /**
+     * 临时先这么测
+     * @return
+     */
+    @Bean
+    public Router router() {
+        return Router.Default;
+    }
+
+    @Bean(initMethod = "start", destroyMethod = "stop")
+    public RegistryCenter registryCenter() {
+        return new RegistryCenter.StaticRegistryCenter(List.of(servers.split(",")));
     }
 
 }

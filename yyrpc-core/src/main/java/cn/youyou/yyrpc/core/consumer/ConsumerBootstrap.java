@@ -1,6 +1,10 @@
 package cn.youyou.yyrpc.core.consumer;
 
 import cn.youyou.yyrpc.core.annotation.YYConsumer;
+import cn.youyou.yyrpc.core.api.LoadBalancer;
+import cn.youyou.yyrpc.core.api.RegistryCenter;
+import cn.youyou.yyrpc.core.api.Router;
+import cn.youyou.yyrpc.core.api.RpcContext;
 import lombok.Data;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -36,13 +40,20 @@ public class ConsumerBootstrap implements ApplicationContextAware {
      * 2、负责扫描spring容器，从中获取属性上添加了@YYConsumer注解的bean，对其相应的属性进行注入；
      */
     public void start() {
+        LoadBalancer loadBalancer = applicationContext.getBean(LoadBalancer.class);
+        Router router = applicationContext.getBean(Router.class);
+        RegistryCenter rc = applicationContext.getBean(RegistryCenter.class);
+        RpcContext rpcContext = new RpcContext();
+        rpcContext.setLoadBalancer(loadBalancer);
+        rpcContext.setRouter(router);
+
         // TODO：优化，扫描
         String[] beanDefinitionNames = applicationContext.getBeanDefinitionNames();
         long start = System.currentTimeMillis();
         for (String beanDefinitionName : beanDefinitionNames) {
             Object bean = applicationContext.getBean(beanDefinitionName);
             List<Field> annotatedField = findAnnotatedField(bean.getClass());
-            serviceProxyInject(bean, annotatedField);
+            serviceProxyInject(bean, annotatedField, rpcContext, rc);
         }
 
         System.out.println("complete consumer endpoint config take " + (System.currentTimeMillis() - start) + " ms");
@@ -69,14 +80,14 @@ public class ConsumerBootstrap implements ApplicationContextAware {
      * @param bean
      * @param fields
      */
-    private void serviceProxyInject(Object bean, List<Field> fields) {
+    private void serviceProxyInject(Object bean, List<Field> fields, RpcContext rpcContext, RegistryCenter registryCenter) {
         fields.forEach(field -> {
             System.out.println(" ===> Consumer(@YYConsumer) beanName: " + bean.getClass().getCanonicalName() + ", FieldName: " + field.getName());
             try {
                 Class<?> service = field.getType();
                 String serviceCanonicalName = service.getCanonicalName();
                 // 存根管理+进行代理生成,这里用动态代理
-                Object serviceProxy = stub.computeIfAbsent(serviceCanonicalName, k -> createServiceProxy(service));
+                Object serviceProxy = stub.computeIfAbsent(serviceCanonicalName, k -> createServiceProxy(service, rpcContext, registryCenter));
                 // 反射注入
                 field.setAccessible(true);
                 field.set(bean, serviceProxy);
@@ -92,11 +103,11 @@ public class ConsumerBootstrap implements ApplicationContextAware {
      * @param service
      * @return
      */
-    private Object createServiceProxy(Class<?> service) {
+    private Object createServiceProxy(Class<?> service, RpcContext rpcContext, RegistryCenter registryCenter) {
         return Proxy.newProxyInstance(
                 service.getClassLoader(),
                 new Class[]{service},
-                new YYConsumerInvocationHandler(service)
+                new YYConsumerInvocationHandler(service, rpcContext, registryCenter.fetchAll(service.getCanonicalName()))
         );
     }
 }
