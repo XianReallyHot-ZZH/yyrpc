@@ -3,17 +3,14 @@ package cn.youyou.yyrpc.core.consumer;
 import cn.youyou.yyrpc.core.api.LoadBalancer;
 import cn.youyou.yyrpc.core.api.RegistryCenter;
 import cn.youyou.yyrpc.core.api.Router;
-import cn.youyou.yyrpc.core.cluster.RandomLoadBalancer;
 import cn.youyou.yyrpc.core.cluster.RoundRibonLoadBalancer;
-import cn.youyou.yyrpc.core.registry.ZkRegistryCenter;
+import cn.youyou.yyrpc.core.registry.zk.ZkRegistryCenter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-
-import java.util.List;
 
 @Configuration
 public class ConsumerConfig {
@@ -66,7 +63,7 @@ public class ConsumerConfig {
         return Router.Default;
     }
 
-    @Bean(initMethod = "start", destroyMethod = "stop")
+    @Bean
     public RegistryCenter registryCenter() {
 //        return new RegistryCenter.StaticRegistryCenter(List.of(servers.split(",")));
         return new ZkRegistryCenter();

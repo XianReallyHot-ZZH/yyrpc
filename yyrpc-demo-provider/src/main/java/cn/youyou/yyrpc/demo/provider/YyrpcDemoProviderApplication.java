@@ -4,6 +4,7 @@ import cn.youyou.yyrpc.core.api.RpcRequest;
 import cn.youyou.yyrpc.core.api.RpcResponse;
 import cn.youyou.yyrpc.core.provider.ProviderBootstrap;
 import cn.youyou.yyrpc.core.provider.ProviderConfig;
+import cn.youyou.yyrpc.core.provider.ProviderInvoker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -22,7 +23,7 @@ public class YyrpcDemoProviderApplication {
     }
 
     @Autowired
-    public ProviderBootstrap providerBootstrap;
+    public ProviderInvoker providerInvoker;
 
     /**
      * 模拟一个服务提供端接受基于http协议远程调用的入口
@@ -31,7 +32,7 @@ public class YyrpcDemoProviderApplication {
      */
     @RequestMapping("/")
     public RpcResponse<?> invoke(@RequestBody RpcRequest request) {
-        return providerBootstrap.invoke(request);
+        return providerInvoker.invoke(request);
     }
 
 

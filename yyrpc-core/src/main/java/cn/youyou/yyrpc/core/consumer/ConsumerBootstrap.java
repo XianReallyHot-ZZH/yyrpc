@@ -5,8 +5,8 @@ import cn.youyou.yyrpc.core.api.LoadBalancer;
 import cn.youyou.yyrpc.core.api.RegistryCenter;
 import cn.youyou.yyrpc.core.api.Router;
 import cn.youyou.yyrpc.core.api.RpcContext;
-import cn.youyou.yyrpc.core.registry.ChangedListener;
-import cn.youyou.yyrpc.core.registry.Event;
+import cn.youyou.yyrpc.core.util.MethodUtils;
+import jakarta.annotation.PreDestroy;
 import lombok.Data;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -14,7 +14,6 @@ import org.springframework.context.ApplicationContextAware;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +27,8 @@ import java.util.stream.Collectors;
 public class ConsumerBootstrap implements ApplicationContextAware {
 
     ApplicationContext applicationContext;
+
+    RegistryCenter rc;
 
     // 服务接口代码存根，key为接口的全限定名，value为相应接口的代理类
     private Map<String, Object> stub = new HashMap<>();
@@ -45,7 +46,9 @@ public class ConsumerBootstrap implements ApplicationContextAware {
     public void start() {
         LoadBalancer loadBalancer = applicationContext.getBean(LoadBalancer.class);
         Router router = applicationContext.getBean(Router.class);
-        RegistryCenter rc = applicationContext.getBean(RegistryCenter.class);
+        rc = applicationContext.getBean(RegistryCenter.class);
+        rc.start();
+
         RpcContext rpcContext = new RpcContext();
         rpcContext.setLoadBalancer(loadBalancer);
         rpcContext.setRouter(router);
@@ -55,26 +58,16 @@ public class ConsumerBootstrap implements ApplicationContextAware {
         long start = System.currentTimeMillis();
         for (String beanDefinitionName : beanDefinitionNames) {
             Object bean = applicationContext.getBean(beanDefinitionName);
-            List<Field> annotatedField = findAnnotatedField(bean.getClass());
+            List<Field> annotatedField = MethodUtils.findAnnotatedField(bean.getClass(), YYConsumer.class);
             serviceProxyInject(bean, annotatedField, rpcContext, rc);
         }
 
         System.out.println("complete consumer endpoint config take " + (System.currentTimeMillis() - start) + " ms");
     }
 
-
-    private List<Field> findAnnotatedField(Class<?> aClass) {
-        ArrayList<Field> result = new ArrayList<>();
-        while (aClass != null) {
-            for (Field field : aClass.getDeclaredFields()) {
-                if (field.isAnnotationPresent(YYConsumer.class)) {
-                    result.add(field);
-                }
-            }
-            aClass = aClass.getSuperclass();
-        }
-
-        return result;
+    @PreDestroy
+    public void stop() {
+        rc.stop();
     }
 
     /**
@@ -106,7 +99,7 @@ public class ConsumerBootstrap implements ApplicationContextAware {
         System.out.println(" ===> map to providers: ");
         providers.forEach(System.out::println);
         // 挂载监听
-        registryCenter.subscribe(serviceName, event ->{
+        registryCenter.subscribe(serviceName, event -> {
             providers.clear();
             providers.addAll(mapUrls(event.getData()));
         });

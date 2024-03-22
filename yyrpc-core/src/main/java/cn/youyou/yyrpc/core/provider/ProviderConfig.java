@@ -1,7 +1,7 @@
 package cn.youyou.yyrpc.core.provider;
 
 import cn.youyou.yyrpc.core.api.RegistryCenter;
-import cn.youyou.yyrpc.core.registry.ZkRegistryCenter;
+import cn.youyou.yyrpc.core.registry.zk.ZkRegistryCenter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
@@ -19,6 +19,11 @@ public class ProviderConfig {
     @Bean
     public ProviderBootstrap providerBootstrap() {
         return new ProviderBootstrap();
+    }
+
+    @Bean
+    public ProviderInvoker providerInvoker(@Autowired ProviderBootstrap providerBootstrap) {
+        return new ProviderInvoker(providerBootstrap);
     }
 
     /**

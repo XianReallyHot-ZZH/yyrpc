@@ -2,11 +2,8 @@ package cn.youyou.yyrpc.core.provider;
 
 import cn.youyou.yyrpc.core.annotation.YYProvider;
 import cn.youyou.yyrpc.core.api.RegistryCenter;
-import cn.youyou.yyrpc.core.api.RpcRequest;
-import cn.youyou.yyrpc.core.api.RpcResponse;
 import cn.youyou.yyrpc.core.meta.ProviderMeta;
 import cn.youyou.yyrpc.core.util.MethodUtils;
-import cn.youyou.yyrpc.core.util.TypeUtils;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.Data;
@@ -18,17 +15,15 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
- * rpc服务端应用启动类，在项目启动期间负责将服务加载进服务端的存根中
- * rpc服务端应用反射调用功能类，处理rpc请求，调用对应的服务后，负责返回rpc结果
+ * rpc服务端应用启动类
+ * 1、在项目启动期间负责将服务加载进服务端的存根中
+ * 2、负责项目启动后的一些初始化工作和项目接受后的资源回收类工作，有点优雅启停的意思
  */
 @Data
 public class ProviderBootstrap implements ApplicationContextAware {
@@ -109,63 +104,13 @@ public class ProviderBootstrap implements ApplicationContextAware {
     }
 
     private void createProviderMeta(Class<?> itfer, Method method, Object provider) {
-        ProviderMeta providerMeta = new ProviderMeta();
-        providerMeta.setMethod(method);
-        providerMeta.setMethodSign(MethodUtils.methodSign(method));
-        providerMeta.setServiceImpl(provider);
+        ProviderMeta providerMeta = ProviderMeta.builder()
+                .method(method)
+                .methodSign(MethodUtils.methodSign(method))
+                .serviceImpl(provider)
+                .build();
         System.out.println(" create a provider: " + providerMeta);
         skeleton.add(itfer.getCanonicalName(), providerMeta);
-    }
-
-    /**
-     * 处理rpc请求，调用对应的服务后，负责返回rpc结果
-     *
-     * @param request
-     * @return
-     */
-    public RpcResponse<?> invoke(RpcRequest request) {
-        RpcResponse rpcResponse = new RpcResponse();
-        List<ProviderMeta> providerMetas = skeleton.get(request.getService());
-        try {
-            ProviderMeta providerMeta = findProviderMeta(providerMetas, request.getMethodSign());
-            Method method = providerMeta.getMethod();
-            Object[] args = processArgs(request.getArgs(), method.getParameterTypes());
-            Object result = method.invoke(providerMeta.getServiceImpl(), args);
-            rpcResponse.setStatus(Boolean.TRUE);
-            rpcResponse.setData(result);
-            return rpcResponse;
-        } catch (IllegalAccessException e) {
-            rpcResponse.setEx(new RuntimeException(e.getMessage()));
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException(new RuntimeException(e.getTargetException().getMessage()));
-        }
-
-        return rpcResponse;
-    }
-
-    /**
-     * 由于序列化有可能会丢失数据类型，所以要对入参进行数据类型的强制转换处理，不然反射会报入参类型不匹配的错
-     *
-     * @param args
-     * @param parameterTypes
-     * @return
-     */
-    private Object[] processArgs(Object[] args, Class<?>[] parameterTypes) {
-        if (args == null || args.length < 1) {
-            return args;
-        }
-        Object[] actuals = new Object[args.length];
-        for (int i = 0; i < actuals.length; i++) {
-            actuals[i] = TypeUtils.cast(args[i], parameterTypes[i]);
-        }
-        return actuals;
-    }
-
-    private ProviderMeta findProviderMeta(List<ProviderMeta> providerMetas, String methodSign) {
-        Optional<ProviderMeta> optional = providerMetas.stream()
-                .filter(providerMeta -> providerMeta.getMethodSign().equals(methodSign))
-                .findFirst();
-        return optional.orElse(null);
     }
 
 }
