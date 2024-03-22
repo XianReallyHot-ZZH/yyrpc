@@ -35,6 +35,8 @@ public class ProviderBootstrap implements ApplicationContextAware {
 
     private ApplicationContext applicationContext;
 
+    private RegistryCenter rc;
+
     /**
      * 内部数据格式为：key为接口的全限定名，value为接口中各个方法的ProviderMeta集合
      */
@@ -58,6 +60,7 @@ public class ProviderBootstrap implements ApplicationContextAware {
     @PostConstruct
     public void init() {
         Map<String, Object> providers = applicationContext.getBeansWithAnnotation(YYProvider.class);
+        rc = applicationContext.getBean(RegistryCenter.class);
         providers.forEach((x, y) -> {
             System.out.println("===> provider beanName:" + x);
         });
@@ -70,6 +73,7 @@ public class ProviderBootstrap implements ApplicationContextAware {
     @SneakyThrows
     public void start() {
         instance = InetAddress.getLocalHost().getHostAddress() + "_" + port;
+        rc.start();
         skeleton.keySet().forEach(this::registerService);
     }
 
@@ -79,15 +83,14 @@ public class ProviderBootstrap implements ApplicationContextAware {
     @PreDestroy
     public void stop() {
         skeleton.keySet().forEach(this::unRegisterService);
+        rc.stop();
     }
 
     private void registerService(String service) {
-        RegistryCenter rc = applicationContext.getBean(RegistryCenter.class);
         rc.register(service, instance);
     }
 
     private void unRegisterService(String service) {
-        RegistryCenter rc = applicationContext.getBean(RegistryCenter.class);
         rc.unRegister(service, instance);
     }
 
