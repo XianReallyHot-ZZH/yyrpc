@@ -5,6 +5,8 @@ import cn.youyou.yyrpc.core.api.LoadBalancer;
 import cn.youyou.yyrpc.core.api.RegistryCenter;
 import cn.youyou.yyrpc.core.api.Router;
 import cn.youyou.yyrpc.core.api.RpcContext;
+import cn.youyou.yyrpc.core.registry.ChangedListener;
+import cn.youyou.yyrpc.core.registry.Event;
 import lombok.Data;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -16,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 1、生成添加了@YYConsumer的属性对应接口的代理，并将代理放进消费端代理服务存根中；
@@ -87,7 +90,7 @@ public class ConsumerBootstrap implements ApplicationContextAware {
                 Class<?> service = field.getType();
                 String serviceCanonicalName = service.getCanonicalName();
                 // 存根管理+进行代理生成,这里用动态代理
-                Object serviceProxy = stub.computeIfAbsent(serviceCanonicalName, k -> createServiceProxy(service, rpcContext, registryCenter));
+                Object serviceProxy = stub.computeIfAbsent(serviceCanonicalName, k -> createServiceFromRegistryCenter(service, rpcContext, registryCenter));
                 // 反射注入
                 field.setAccessible(true);
                 field.set(bean, serviceProxy);
@@ -97,17 +100,34 @@ public class ConsumerBootstrap implements ApplicationContextAware {
         });
     }
 
+    private Object createServiceFromRegistryCenter(Class<?> service, RpcContext rpcContext, RegistryCenter registryCenter) {
+        String serviceName = service.getCanonicalName();
+        List<String> providers = mapUrls(registryCenter.fetchAll(serviceName));
+        System.out.println(" ===> map to providers: ");
+        providers.forEach(System.out::println);
+        // 挂载监听
+        registryCenter.subscribe(serviceName, event ->{
+            providers.clear();
+            providers.addAll(mapUrls(event.getData()));
+        });
+        return createServiceProxy(service, rpcContext, providers);
+    }
+
+    private List<String> mapUrls(List<String> nodes) {
+        return nodes.stream().map(x -> "http://" + x.replace("_", ":")).collect(Collectors.toList());
+    }
+
     /**
      * RPC 服务接口的代理生成
      *
      * @param service
      * @return
      */
-    private Object createServiceProxy(Class<?> service, RpcContext rpcContext, RegistryCenter registryCenter) {
+    private Object createServiceProxy(Class<?> service, RpcContext rpcContext, List<String> providers) {
         return Proxy.newProxyInstance(
                 service.getClassLoader(),
                 new Class[]{service},
-                new YYConsumerInvocationHandler(service, rpcContext, registryCenter.fetchAll(service.getCanonicalName()))
+                new YYConsumerInvocationHandler(service, rpcContext, providers)
         );
     }
 }

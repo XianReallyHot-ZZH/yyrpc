@@ -1,5 +1,7 @@
 package cn.youyou.yyrpc.core.api;
 
+import cn.youyou.yyrpc.core.registry.ChangedListener;
+
 import java.util.List;
 
 public interface RegistryCenter {
@@ -20,6 +22,8 @@ public interface RegistryCenter {
      * 提供给consumer侧的功能
      */
     List<String> fetchAll(String service);
+    void subscribe(String service, ChangedListener listener);
+
 
     class StaticRegistryCenter implements RegistryCenter {
 
@@ -52,6 +56,11 @@ public interface RegistryCenter {
         @Override
         public List<String> fetchAll(String service) {
             return providers;
+        }
+
+        @Override
+        public void subscribe(String service, ChangedListener listener) {
+
         }
     }
 

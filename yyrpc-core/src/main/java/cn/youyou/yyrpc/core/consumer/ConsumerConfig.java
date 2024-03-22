@@ -5,6 +5,7 @@ import cn.youyou.yyrpc.core.api.RegistryCenter;
 import cn.youyou.yyrpc.core.api.Router;
 import cn.youyou.yyrpc.core.cluster.RandomLoadBalancer;
 import cn.youyou.yyrpc.core.cluster.RoundRibonLoadBalancer;
+import cn.youyou.yyrpc.core.registry.ZkRegistryCenter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -41,7 +42,7 @@ public class ConsumerConfig {
             public void run(ApplicationArguments args) throws Exception {
                 System.out.println("consumerBootstrap starting ...");
                 consumerBootstrap.start();
-                System.out.println("consumerBootstrap end ...");
+                System.out.println("consumerBootstrap started ...");
             }
         };
     }
@@ -67,7 +68,8 @@ public class ConsumerConfig {
 
     @Bean(initMethod = "start", destroyMethod = "stop")
     public RegistryCenter registryCenter() {
-        return new RegistryCenter.StaticRegistryCenter(List.of(servers.split(",")));
+//        return new RegistryCenter.StaticRegistryCenter(List.of(servers.split(",")));
+        return new ZkRegistryCenter();
     }
 
 }
