@@ -5,6 +5,7 @@ import cn.youyou.yyrpc.core.api.LoadBalancer;
 import cn.youyou.yyrpc.core.api.RegistryCenter;
 import cn.youyou.yyrpc.core.api.Router;
 import cn.youyou.yyrpc.core.api.RpcContext;
+import cn.youyou.yyrpc.core.meta.InstanceMeta;
 import cn.youyou.yyrpc.core.util.MethodUtils;
 import jakarta.annotation.PreDestroy;
 import lombok.Data;
@@ -95,19 +96,15 @@ public class ConsumerBootstrap implements ApplicationContextAware {
 
     private Object createServiceFromRegistryCenter(Class<?> service, RpcContext rpcContext, RegistryCenter registryCenter) {
         String serviceName = service.getCanonicalName();
-        List<String> providers = mapUrls(registryCenter.fetchAll(serviceName));
+        List<InstanceMeta> providers = registryCenter.fetchAll(serviceName);
         System.out.println(" ===> map to providers: ");
         providers.forEach(System.out::println);
         // 挂载监听
         registryCenter.subscribe(serviceName, event -> {
             providers.clear();
-            providers.addAll(mapUrls(event.getData()));
+            providers.addAll(event.getData());
         });
         return createServiceProxy(service, rpcContext, providers);
-    }
-
-    private List<String> mapUrls(List<String> nodes) {
-        return nodes.stream().map(x -> "http://" + x.replace("_", ":")).collect(Collectors.toList());
     }
 
     /**
@@ -116,7 +113,7 @@ public class ConsumerBootstrap implements ApplicationContextAware {
      * @param service
      * @return
      */
-    private Object createServiceProxy(Class<?> service, RpcContext rpcContext, List<String> providers) {
+    private Object createServiceProxy(Class<?> service, RpcContext rpcContext, List<InstanceMeta> providers) {
         return Proxy.newProxyInstance(
                 service.getClassLoader(),
                 new Class[]{service},

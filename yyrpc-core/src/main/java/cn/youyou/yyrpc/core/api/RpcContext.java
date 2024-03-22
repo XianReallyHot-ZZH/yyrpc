@@ -1,5 +1,6 @@
 package cn.youyou.yyrpc.core.api;
 
+import cn.youyou.yyrpc.core.meta.InstanceMeta;
 import lombok.Data;
 
 import java.util.List;
@@ -9,8 +10,8 @@ public class RpcContext {
 
     private List<Filter> filters;
 
-    private LoadBalancer loadBalancer;
+    private LoadBalancer<InstanceMeta> loadBalancer;
 
-    private Router router;
+    private Router<InstanceMeta> router;
 
 }

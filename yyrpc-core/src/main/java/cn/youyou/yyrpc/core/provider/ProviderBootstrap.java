@@ -2,6 +2,7 @@ package cn.youyou.yyrpc.core.provider;
 
 import cn.youyou.yyrpc.core.annotation.YYProvider;
 import cn.youyou.yyrpc.core.api.RegistryCenter;
+import cn.youyou.yyrpc.core.meta.InstanceMeta;
 import cn.youyou.yyrpc.core.meta.ProviderMeta;
 import cn.youyou.yyrpc.core.util.MethodUtils;
 import jakarta.annotation.PostConstruct;
@@ -40,7 +41,7 @@ public class ProviderBootstrap implements ApplicationContextAware {
     @Value("${server.port}")
     private String port;
 
-    private String instance;
+    private InstanceMeta instance;
 
     // 实现了ApplicationContextAware接口，Spring容器会在创建该Bean之后，自动调用该Bean的setApplicationContext()方法，调用该方法时，会将容器本身作为参数传给该方法
     @Override
@@ -67,7 +68,7 @@ public class ProviderBootstrap implements ApplicationContextAware {
      */
     @SneakyThrows
     public void start() {
-        instance = InetAddress.getLocalHost().getHostAddress() + "_" + port;
+        instance = InstanceMeta.http(InetAddress.getLocalHost().getHostAddress(), Integer.valueOf(port));
         rc.start();
         skeleton.keySet().forEach(this::registerService);
     }

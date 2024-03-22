@@ -5,6 +5,7 @@ import cn.youyou.yyrpc.core.api.RpcContext;
 import cn.youyou.yyrpc.core.api.RpcRequest;
 import cn.youyou.yyrpc.core.api.RpcResponse;
 import cn.youyou.yyrpc.core.consumer.http.OkHttpInvoker;
+import cn.youyou.yyrpc.core.meta.InstanceMeta;
 import cn.youyou.yyrpc.core.util.MethodUtils;
 import cn.youyou.yyrpc.core.util.TypeUtils;
 
@@ -26,11 +27,11 @@ public class YYConsumerInvocationHandler implements InvocationHandler {
 
     private RpcContext rpcContext;
 
-    private List<String> providers;
+    private List<InstanceMeta> providers;
 
     private HttpInvoker httpInvoker = new OkHttpInvoker();
 
-    public YYConsumerInvocationHandler(Class<?> service, RpcContext rpcContext, List<String> providers) {
+    public YYConsumerInvocationHandler(Class<?> service, RpcContext rpcContext, List<InstanceMeta> providers) {
         this.service = service;
         this.rpcContext = rpcContext;
         this.providers = providers;
@@ -49,10 +50,11 @@ public class YYConsumerInvocationHandler implements InvocationHandler {
         rpcRequest.setMethodSign(MethodUtils.methodSign(method));
         rpcRequest.setArgs(args);
 
-        String url = (String) rpcContext.getLoadBalancer().choose(rpcContext.getRouter().route(providers));
-        System.out.println("loadBalancer.choose(urls) ==> " + url);
+        List<InstanceMeta> instances = rpcContext.getRouter().route(providers);
+        InstanceMeta instance = rpcContext.getLoadBalancer().choose(instances);
+        System.out.println("loadBalancer.choose(urls) ==> " + instance);
 
-        RpcResponse<?> rpcResponse = httpInvoker.post(rpcRequest, url);
+        RpcResponse<?> rpcResponse = httpInvoker.post(rpcRequest, instance.toUrl());
 
         if (rpcResponse.isStatus()) {
             return TypeUtils.castMethodResult(method, rpcResponse.getData());

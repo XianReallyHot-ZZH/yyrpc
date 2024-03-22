@@ -1,6 +1,7 @@
 package cn.youyou.yyrpc.core.registry.zk;
 
 import cn.youyou.yyrpc.core.api.RegistryCenter;
+import cn.youyou.yyrpc.core.meta.InstanceMeta;
 import cn.youyou.yyrpc.core.registry.ChangedListener;
 import cn.youyou.yyrpc.core.registry.Event;
 import lombok.SneakyThrows;
@@ -14,6 +15,7 @@ import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.CreateMode;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ZkRegistryCenter implements RegistryCenter {
 
@@ -42,7 +44,7 @@ public class ZkRegistryCenter implements RegistryCenter {
     }
 
     @Override
-    public void register(String service, String instance) {
+    public void register(String service, InstanceMeta instance) {
         // 业务语义上的初始化工作之一，消费端需要将自己注册到ZK上
         String servicePath = "/" + service;
         try {
@@ -51,7 +53,7 @@ public class ZkRegistryCenter implements RegistryCenter {
                 client.create().withMode(CreateMode.PERSISTENT).forPath(servicePath, "service".getBytes());
             }
             // 创建服务提供者的临时节点信息
-            String instancePath = servicePath + "/" + instance;
+            String instancePath = servicePath + "/" + instance.toPath();
             client.create().withMode(CreateMode.EPHEMERAL).forPath(instancePath, "provider".getBytes());
             System.out.println("===>[ZkRegistryCenter] register to zk, provider: " + instancePath);
         } catch (Exception e) {
@@ -60,7 +62,7 @@ public class ZkRegistryCenter implements RegistryCenter {
     }
 
     @Override
-    public void unRegister(String service, String instance) {
+    public void unRegister(String service, InstanceMeta instance) {
         // 业务语义上的资源反注销工作之一，消费端需要将自己从ZK上注销
         String servicePath = "/" + service;
 
@@ -69,7 +71,7 @@ public class ZkRegistryCenter implements RegistryCenter {
             if (client.checkExists().forPath(servicePath) == null) {
                 return;
             }
-            String instancePath = servicePath + "/" + instance;
+            String instancePath = servicePath + "/" + instance.toPath();
             client.delete().quietly().forPath(instancePath);
             System.out.println("===>[ZkRegistryCenter] unRegister from zk, provider: " + instancePath);
         } catch (Exception e) {
@@ -78,24 +80,32 @@ public class ZkRegistryCenter implements RegistryCenter {
     }
 
     @Override
-    public List<String> fetchAll(String service) {
+    public List<InstanceMeta> fetchAll(String service) {
         // 业务运行期，注册中心的核心功能之一，提供从ZK上获取相关资源的功能
         String servicePath = "/" + service;
         try {
             List<String> nodes = client.getChildren().forPath(servicePath);
             System.out.println(" ===>[ZkRegistryCenter] service=" + service + ", fetchAll nodes from zk: " + servicePath);
             nodes.forEach(System.out::println);
-            return nodes;
+            return mapInstances(nodes);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private List<InstanceMeta> mapInstances(List<String> nodes) {
+        return nodes.stream().map(x -> {
+            String[] strings = x.split("_");
+            return InstanceMeta.http(strings[0], Integer.valueOf(strings[1]));
+        }).collect(Collectors.toList());
+
     }
 
     @Override
     @SneakyThrows
     public void subscribe(String service, ChangedListener listener) {
         // 通过将回调逻辑注册到ZK缓存监控工具上，实现自动监听zk变化，触发相应的业务逻辑
-        System.out.println(" ===>[ZkRegistryCenter] 进行挂载, service:" + service);
+        System.out.println(" ===>[ZkRegistryCenter] 进行指定服务的监听挂载, service:" + service);
         final TreeCache cache = TreeCache.newBuilder(client, "/" + service)
                 .setCacheData(true)
                 .setMaxDepth(2)
@@ -105,7 +115,7 @@ public class ZkRegistryCenter implements RegistryCenter {
             public void childEvent(CuratorFramework client, TreeCacheEvent event) throws Exception {
                 // 监听到变动，进而触发这里的逻辑
                 System.out.println(" ===>[ZkRegistryCenter] subscribe from zk, event: " + event);
-                List<String> nodes = fetchAll(service);
+                List<InstanceMeta> nodes = fetchAll(service);
                 // 触发定义好的订阅更新逻辑
                 listener.fire(new Event(nodes));
             }
