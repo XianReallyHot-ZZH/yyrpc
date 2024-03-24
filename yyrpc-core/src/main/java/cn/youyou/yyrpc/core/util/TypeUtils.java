@@ -2,6 +2,7 @@ package cn.youyou.yyrpc.core.util;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
@@ -9,6 +10,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.*;
 
+@Slf4j
 public class TypeUtils {
 
     /**
@@ -81,7 +83,7 @@ public class TypeUtils {
     public static Object castMethodResult(Method method, Object data) {
         Class<?> returnType = method.getReturnType();
         // 反解析RpcResponse里的data数据到对应的数据类型
-        System.out.println("method.getReturnType() = " + returnType + ", data value = " + data);
+        log.debug("method.getReturnType() = " + returnType + ", data value = " + data);
 
         // 请求端发起请求，接受来自服务端的返回时，对象在通过http接受时会被序列化成JSONObject
         if (data instanceof JSONObject jsonObject) {
@@ -117,10 +119,10 @@ public class TypeUtils {
             } else if (List.class.isAssignableFrom(returnType)) { // 请求端发起请求，接受来自服务端的返回时，List类型会变成jsonArray
                 List<Object> resultList = new ArrayList<>(array.length);
                 Type genericReturnType = method.getGenericReturnType();
-                System.out.println(genericReturnType);
+                log.debug(genericReturnType.toString());
                 if (genericReturnType instanceof ParameterizedType parameterizedType) {
                     Type actualType = parameterizedType.getActualTypeArguments()[0];
-                    System.out.println(actualType);
+                    log.debug(actualType.toString());
                     for (Object o : array) {
                         resultList.add(TypeUtils.cast(o, (Class<?>) actualType));
                     }

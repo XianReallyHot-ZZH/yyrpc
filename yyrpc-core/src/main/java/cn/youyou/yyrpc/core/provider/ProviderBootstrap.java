@@ -10,6 +10,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.Data;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
@@ -28,6 +29,7 @@ import java.util.Map;
  * 2、负责项目启动后的一些初始化工作和项目接受后的资源回收类工作，有点优雅启停的意思
  */
 @Data
+@Slf4j
 public class ProviderBootstrap implements ApplicationContextAware {
 
     private ApplicationContext applicationContext;
@@ -69,7 +71,7 @@ public class ProviderBootstrap implements ApplicationContextAware {
         Map<String, Object> providers = applicationContext.getBeansWithAnnotation(YYProvider.class);
         rc = applicationContext.getBean(RegistryCenter.class);
         providers.forEach((x, y) -> {
-            System.out.println("===> provider beanName:" + x);
+            log.info("===> provider beanName:" + x);
         });
         providers.values().forEach(this::put2Skeleton);
     }
@@ -123,7 +125,7 @@ public class ProviderBootstrap implements ApplicationContextAware {
                 .methodSign(MethodUtils.methodSign(method))
                 .serviceImpl(provider)
                 .build();
-        System.out.println(" create a provider: " + providerMeta);
+        log.info(" create a provider: " + providerMeta);
         skeleton.add(itfer.getCanonicalName(), providerMeta);
     }
 

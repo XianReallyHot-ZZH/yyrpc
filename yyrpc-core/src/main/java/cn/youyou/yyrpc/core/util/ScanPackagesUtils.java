@@ -17,7 +17,7 @@ import java.util.function.Predicate;
 
 /**
  * 类扫描技术
- * 不依赖于JVM加载和反射技术的方案
+ * 不依赖于JVM加载的方案
  */
 public class ScanPackagesUtils {
     static final String DEFAULT_RESOURCE_PATTERN = "**/*.class";

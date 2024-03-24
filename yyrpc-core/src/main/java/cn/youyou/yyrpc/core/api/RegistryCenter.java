@@ -12,18 +12,21 @@ public interface RegistryCenter {
      * 注册中心本身的一些启动和退出的逻辑
      */
     void start();
+
     void stop();
 
     /**
      * 提供给provider侧的功能
      */
     void register(ServiceMeta service, InstanceMeta instance);
+
     void unRegister(ServiceMeta service, InstanceMeta instance);
 
     /**
      * 提供给consumer侧的功能
      */
     List<InstanceMeta> fetchAll(ServiceMeta service);
+
     void subscribe(ServiceMeta service, ChangedListener listener);
 
 
@@ -37,12 +40,12 @@ public interface RegistryCenter {
 
         @Override
         public void start() {
-            System.out.println("StaticRegistryCenter start~~~");
+
         }
 
         @Override
         public void stop() {
-            System.out.println("StaticRegistryCenter stop~~~");
+
         }
 
         @Override

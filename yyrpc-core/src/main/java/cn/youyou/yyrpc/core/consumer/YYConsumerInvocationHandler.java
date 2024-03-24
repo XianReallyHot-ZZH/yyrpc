@@ -8,6 +8,7 @@ import cn.youyou.yyrpc.core.consumer.http.OkHttpInvoker;
 import cn.youyou.yyrpc.core.meta.InstanceMeta;
 import cn.youyou.yyrpc.core.util.MethodUtils;
 import cn.youyou.yyrpc.core.util.TypeUtils;
+import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -21,6 +22,7 @@ import java.util.List;
  * （2）进行远程请求
  * 2、获取结果进行反解析返回对应的类型
  */
+@Slf4j
 public class YYConsumerInvocationHandler implements InvocationHandler {
 
     private Class<?> service;
@@ -41,7 +43,7 @@ public class YYConsumerInvocationHandler implements InvocationHandler {
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         // 方法过滤，类似toString方法
         if (MethodUtils.checkLocalMethod(method)) {
-            System.out.println("过滤掉原生方法，methodName = " + method.getName());
+            log.debug("过滤掉原生方法，methodName = " + method.getName());
             return null;
         }
 
@@ -52,7 +54,7 @@ public class YYConsumerInvocationHandler implements InvocationHandler {
 
         List<InstanceMeta> instances = rpcContext.getRouter().route(providers);
         InstanceMeta instance = rpcContext.getLoadBalancer().choose(instances);
-        System.out.println("loadBalancer.choose(urls) ==> " + instance);
+        log.debug("loadBalancer.choose(urls) ==> " + instance);
 
         RpcResponse<?> rpcResponse = httpInvoker.post(rpcRequest, instance.toUrl());
 

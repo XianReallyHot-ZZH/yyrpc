@@ -10,6 +10,7 @@ import cn.youyou.yyrpc.core.meta.ServiceMeta;
 import cn.youyou.yyrpc.core.util.MethodUtils;
 import jakarta.annotation.PreDestroy;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
  * 2、负责扫描spring容器，从中获取属性上添加了@YYConsumer注解的bean，对其相应的属性进行注入；
  */
 @Data
+@Slf4j
 public class ConsumerBootstrap implements ApplicationContextAware {
 
     ApplicationContext applicationContext;
@@ -74,7 +76,7 @@ public class ConsumerBootstrap implements ApplicationContextAware {
             serviceProxyInject(bean, annotatedField, rpcContext, rc);
         }
 
-        System.out.println("complete consumer endpoint config take " + (System.currentTimeMillis() - start) + " ms");
+        log.info("complete consumer endpoint config take " + (System.currentTimeMillis() - start) + " ms");
     }
 
     @PreDestroy
@@ -90,7 +92,7 @@ public class ConsumerBootstrap implements ApplicationContextAware {
      */
     private void serviceProxyInject(Object bean, List<Field> fields, RpcContext rpcContext, RegistryCenter registryCenter) {
         fields.forEach(field -> {
-            System.out.println(" ===> Consumer(@YYConsumer) beanName: " + bean.getClass().getCanonicalName() + ", FieldName: " + field.getName());
+            log.info(" ===> Consumer(@YYConsumer) beanName: " + bean.getClass().getCanonicalName() + ", FieldName: " + field.getName());
             try {
                 Class<?> service = field.getType();
                 String serviceCanonicalName = service.getCanonicalName();
@@ -109,7 +111,7 @@ public class ConsumerBootstrap implements ApplicationContextAware {
         String serviceName = service.getCanonicalName();
         ServiceMeta serviceMeta = ServiceMeta.builder().app(app).namespace(namespace).env(env).name(serviceName).build();
         List<InstanceMeta> providers = registryCenter.fetchAll(serviceMeta);
-        System.out.println(" ===> map to providers: ");
+        log.info(" ===> map to providers: ");
         providers.forEach(System.out::println);
         // 挂载监听
         registryCenter.subscribe(serviceMeta, event -> {
