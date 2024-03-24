@@ -4,6 +4,7 @@ import cn.youyou.yyrpc.core.api.LoadBalancer;
 import cn.youyou.yyrpc.core.api.RegistryCenter;
 import cn.youyou.yyrpc.core.api.Router;
 import cn.youyou.yyrpc.core.cluster.RoundRibonLoadBalancer;
+import cn.youyou.yyrpc.core.filter.CacheFilter;
 import cn.youyou.yyrpc.core.registry.zk.ZkRegistryCenter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
@@ -66,5 +67,10 @@ public class ConsumerConfig {
 //        return new RegistryCenter.StaticRegistryCenter(List.of(servers.split(",")));
         return new ZkRegistryCenter();
     }
+
+//    @Bean
+//    public CacheFilter filter1() {
+//        return new CacheFilter();
+//    }
 
 }

@@ -1,10 +1,7 @@
 package cn.youyou.yyrpc.core.consumer;
 
 import cn.youyou.yyrpc.core.annotation.YYConsumer;
-import cn.youyou.yyrpc.core.api.LoadBalancer;
-import cn.youyou.yyrpc.core.api.RegistryCenter;
-import cn.youyou.yyrpc.core.api.Router;
-import cn.youyou.yyrpc.core.api.RpcContext;
+import cn.youyou.yyrpc.core.api.*;
 import cn.youyou.yyrpc.core.meta.InstanceMeta;
 import cn.youyou.yyrpc.core.meta.ServiceMeta;
 import cn.youyou.yyrpc.core.util.MethodUtils;
@@ -38,6 +35,11 @@ public class ConsumerBootstrap implements ApplicationContextAware {
     // 服务接口代码存根，key为接口的全限定名，value为相应接口的代理类
     private Map<String, Object> stub = new HashMap<>();
 
+    /**
+     * TODO:
+     * 后续优化点，将这些服务的环境参数写到服务消费端注解上，作为服务的一部分属性，
+     * 如果服务没有配置自己的属性，那么以全局属性作为自己的属性
+     */
     @Value("${app.id}")
     private String app;
 
@@ -62,10 +64,12 @@ public class ConsumerBootstrap implements ApplicationContextAware {
         Router router = applicationContext.getBean(Router.class);
         rc = applicationContext.getBean(RegistryCenter.class);
         rc.start();
+        List<Filter> filters = applicationContext.getBeansOfType(Filter.class).values().stream().toList();
 
         RpcContext rpcContext = new RpcContext();
         rpcContext.setLoadBalancer(loadBalancer);
         rpcContext.setRouter(router);
+        rpcContext.setFilters(filters);
 
         // TODO：优化，扫描
         String[] beanDefinitionNames = applicationContext.getBeanDefinitionNames();

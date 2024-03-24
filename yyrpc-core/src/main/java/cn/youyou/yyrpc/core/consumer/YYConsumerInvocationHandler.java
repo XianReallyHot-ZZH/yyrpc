@@ -1,6 +1,7 @@
 package cn.youyou.yyrpc.core.consumer;
 
 
+import cn.youyou.yyrpc.core.api.Filter;
 import cn.youyou.yyrpc.core.api.RpcContext;
 import cn.youyou.yyrpc.core.api.RpcRequest;
 import cn.youyou.yyrpc.core.api.RpcResponse;
@@ -52,12 +53,34 @@ public class YYConsumerInvocationHandler implements InvocationHandler {
         rpcRequest.setMethodSign(MethodUtils.methodSign(method));
         rpcRequest.setArgs(args);
 
+        // 嵌入过滤逻辑(前置过滤)
+        for (Filter filter : rpcContext.getFilters()) {
+            Object preResult = filter.preFilter(rpcRequest);
+            if (preResult != null) {
+                log.debug(filter.getClass().getName() + " ===> preFilter result: " + preResult);
+                return preResult;
+            }
+        }
+
         List<InstanceMeta> instances = rpcContext.getRouter().route(providers);
         InstanceMeta instance = rpcContext.getLoadBalancer().choose(instances);
         log.debug("loadBalancer.choose(urls) ==> " + instance);
 
         RpcResponse<?> rpcResponse = httpInvoker.post(rpcRequest, instance.toUrl());
+        Object result = castReturnResult(method, rpcResponse);
+        // 嵌入过滤逻辑(后置过滤)
+        for (Filter filter : rpcContext.getFilters()) {
+            Object postResult = filter.postFilter(rpcRequest, rpcResponse, result);
+            if (postResult != null) {
+                log.debug(filter.getClass().getName() + " ===> postFilter result: " + postResult);
+                return postResult;
+            }
+        }
 
+        return result;
+    }
+
+    private Object castReturnResult(Method method, RpcResponse rpcResponse) {
         if (rpcResponse.isStatus()) {
             return TypeUtils.castMethodResult(method, rpcResponse.getData());
         } else {
