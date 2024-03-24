@@ -6,10 +6,12 @@ import cn.youyou.yyrpc.core.api.RegistryCenter;
 import cn.youyou.yyrpc.core.api.Router;
 import cn.youyou.yyrpc.core.api.RpcContext;
 import cn.youyou.yyrpc.core.meta.InstanceMeta;
+import cn.youyou.yyrpc.core.meta.ServiceMeta;
 import cn.youyou.yyrpc.core.util.MethodUtils;
 import jakarta.annotation.PreDestroy;
 import lombok.Data;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
@@ -33,6 +35,15 @@ public class ConsumerBootstrap implements ApplicationContextAware {
 
     // 服务接口代码存根，key为接口的全限定名，value为相应接口的代理类
     private Map<String, Object> stub = new HashMap<>();
+
+    @Value("${app.id}")
+    private String app;
+
+    @Value("${app.namespace}")
+    private String namespace;
+
+    @Value("${app.env}")
+    private String env;
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
@@ -96,11 +107,12 @@ public class ConsumerBootstrap implements ApplicationContextAware {
 
     private Object createServiceFromRegistryCenter(Class<?> service, RpcContext rpcContext, RegistryCenter registryCenter) {
         String serviceName = service.getCanonicalName();
-        List<InstanceMeta> providers = registryCenter.fetchAll(serviceName);
+        ServiceMeta serviceMeta = ServiceMeta.builder().app(app).namespace(namespace).env(env).name(serviceName).build();
+        List<InstanceMeta> providers = registryCenter.fetchAll(serviceMeta);
         System.out.println(" ===> map to providers: ");
         providers.forEach(System.out::println);
         // 挂载监听
-        registryCenter.subscribe(serviceName, event -> {
+        registryCenter.subscribe(serviceMeta, event -> {
             providers.clear();
             providers.addAll(event.getData());
         });

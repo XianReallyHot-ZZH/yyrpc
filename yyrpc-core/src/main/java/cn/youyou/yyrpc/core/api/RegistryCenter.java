@@ -1,6 +1,7 @@
 package cn.youyou.yyrpc.core.api;
 
 import cn.youyou.yyrpc.core.meta.InstanceMeta;
+import cn.youyou.yyrpc.core.meta.ServiceMeta;
 import cn.youyou.yyrpc.core.registry.ChangedListener;
 
 import java.util.List;
@@ -16,14 +17,14 @@ public interface RegistryCenter {
     /**
      * 提供给provider侧的功能
      */
-    void register(String service, InstanceMeta instance);
-    void unRegister(String service, InstanceMeta instance);
+    void register(ServiceMeta service, InstanceMeta instance);
+    void unRegister(ServiceMeta service, InstanceMeta instance);
 
     /**
      * 提供给consumer侧的功能
      */
-    List<InstanceMeta> fetchAll(String service);
-    void subscribe(String service, ChangedListener listener);
+    List<InstanceMeta> fetchAll(ServiceMeta service);
+    void subscribe(ServiceMeta service, ChangedListener listener);
 
 
     class StaticRegistryCenter implements RegistryCenter {
@@ -45,22 +46,22 @@ public interface RegistryCenter {
         }
 
         @Override
-        public void register(String service, InstanceMeta instance) {
+        public void register(ServiceMeta service, InstanceMeta instance) {
 
         }
 
         @Override
-        public void unRegister(String service, InstanceMeta instance) {
+        public void unRegister(ServiceMeta service, InstanceMeta instance) {
 
         }
 
         @Override
-        public List<InstanceMeta> fetchAll(String service) {
+        public List<InstanceMeta> fetchAll(ServiceMeta service) {
             return providers;
         }
 
         @Override
-        public void subscribe(String service, ChangedListener listener) {
+        public void subscribe(ServiceMeta service, ChangedListener listener) {
 
         }
     }

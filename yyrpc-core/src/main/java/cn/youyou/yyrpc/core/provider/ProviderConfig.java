@@ -39,7 +39,7 @@ public class ProviderConfig {
         return args -> {
             System.out.println("providerBootstrap starting ...");
             providerBootstrap.start();
-            System.out.println("providerBootstrap started ...");
+            System.out.println("providerBootstrap started, every thing is OK");
         };
     }
 

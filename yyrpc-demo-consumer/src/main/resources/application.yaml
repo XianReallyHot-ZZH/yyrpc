@@ -6,4 +6,10 @@ spring:
     name: yyrpc-demo-consumer
 
 yyrpc:
-  providers: http://localhost:8081,http://localhost:8082,http://localhost:8083
+  zkServer: localhost:2181
+  zkRoot: yyrpc
+
+app:
+  id: app1
+  namespace: public
+  env: dev

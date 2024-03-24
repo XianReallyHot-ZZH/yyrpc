@@ -7,7 +7,8 @@ import lombok.NoArgsConstructor;
 import java.util.Map;
 
 /**
- * 注册到注册中心的实例的信息
+ * 用于表达服务实例的元信息
+ * 后续要增强的属性都添加在这里
  */
 @Data
 @AllArgsConstructor

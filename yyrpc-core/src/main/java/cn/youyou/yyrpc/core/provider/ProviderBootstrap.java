@@ -4,6 +4,7 @@ import cn.youyou.yyrpc.core.annotation.YYProvider;
 import cn.youyou.yyrpc.core.api.RegistryCenter;
 import cn.youyou.yyrpc.core.meta.InstanceMeta;
 import cn.youyou.yyrpc.core.meta.ProviderMeta;
+import cn.youyou.yyrpc.core.meta.ServiceMeta;
 import cn.youyou.yyrpc.core.util.MethodUtils;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -42,6 +43,16 @@ public class ProviderBootstrap implements ApplicationContextAware {
     private String port;
 
     private InstanceMeta instance;
+
+    @Value("${app.id}")
+    private String app;
+
+    @Value("${app.namespace}")
+    private String namespace;
+
+    @Value("${app.env}")
+    private String env;
+
 
     // 实现了ApplicationContextAware接口，Spring容器会在创建该Bean之后，自动调用该Bean的setApplicationContext()方法，调用该方法时，会将容器本身作为参数传给该方法
     @Override
@@ -83,11 +94,13 @@ public class ProviderBootstrap implements ApplicationContextAware {
     }
 
     private void registerService(String service) {
-        rc.register(service, instance);
+        ServiceMeta serviceMeta = ServiceMeta.builder().app(app).namespace(namespace).env(env).name(service).build();
+        rc.register(serviceMeta, instance);
     }
 
     private void unRegisterService(String service) {
-        rc.unRegister(service, instance);
+        ServiceMeta serviceMeta = ServiceMeta.builder().app(app).namespace(namespace).env(env).name(service).build();
+        rc.unRegister(serviceMeta, instance);
     }
 
     private void put2Skeleton(Object provider) {

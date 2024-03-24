@@ -15,12 +15,6 @@ import org.springframework.core.annotation.Order;
 @Configuration
 public class ConsumerConfig {
 
-    /**
-     * 临时先这么测
-     */
-    @Value("${yyrpc.providers}")
-    String servers;
-
     @Bean
     ConsumerBootstrap createConsumerBootstrap() {
         return new ConsumerBootstrap();
