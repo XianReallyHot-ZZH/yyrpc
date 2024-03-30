@@ -1,6 +1,7 @@
 package cn.youyou.yyrpc.core.consumer;
 
 
+import cn.youyou.yyrpc.core.RpcException;
 import cn.youyou.yyrpc.core.api.Filter;
 import cn.youyou.yyrpc.core.api.RpcContext;
 import cn.youyou.yyrpc.core.api.RpcRequest;
@@ -84,8 +85,13 @@ public class YYConsumerInvocationHandler implements InvocationHandler {
         if (rpcResponse.isStatus()) {
             return TypeUtils.castMethodResult(method, rpcResponse.getData());
         } else {
-            Exception ex = rpcResponse.getEx();
-            throw new RuntimeException(ex);
+            Exception exception = rpcResponse.getEx();
+            if (exception instanceof RpcException ex) {
+                throw ex;
+            } else {
+                throw new RpcException(exception, RpcException.UnknownEx);
+            }
+
         }
     }
 }

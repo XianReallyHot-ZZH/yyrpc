@@ -1,5 +1,6 @@
 package cn.youyou.yyrpc.core.registry.zk;
 
+import cn.youyou.yyrpc.core.RpcException;
 import cn.youyou.yyrpc.core.api.RegistryCenter;
 import cn.youyou.yyrpc.core.meta.InstanceMeta;
 import cn.youyou.yyrpc.core.meta.ServiceMeta;
@@ -71,7 +72,7 @@ public class ZkRegistryCenter implements RegistryCenter {
             client.create().withMode(CreateMode.EPHEMERAL).forPath(instancePath, "provider".getBytes());
             log.info("===>[ZkRegistryCenter] register to zk, provider: " + instancePath);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RpcException(e);
         }
     }
 
@@ -89,7 +90,7 @@ public class ZkRegistryCenter implements RegistryCenter {
             client.delete().quietly().forPath(instancePath);
             log.info("===>[ZkRegistryCenter] unRegister from zk, provider: " + instancePath);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RpcException(e);
         }
     }
 
@@ -103,7 +104,7 @@ public class ZkRegistryCenter implements RegistryCenter {
             nodes.forEach(System.out::println);
             return mapInstances(nodes);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RpcException(e);
         }
     }
 

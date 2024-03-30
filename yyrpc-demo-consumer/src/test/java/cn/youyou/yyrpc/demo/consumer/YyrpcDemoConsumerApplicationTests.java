@@ -28,7 +28,7 @@ class YyrpcDemoConsumerApplicationTests {
         zkServer.start();
 
         context = SpringApplication.run(YyrpcDemoProviderApplication.class,
-                "--server.port=8084", "--kkrpc.zkServer=localhost:2182",
+                "--server.port=8089", "--kkrpc.zkServer=localhost:2182",
                 "--logging.level.cn.kimmking.kkrpc=info");
 
     }

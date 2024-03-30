@@ -1,5 +1,6 @@
 package cn.youyou.yyrpc.core.provider;
 
+import cn.youyou.yyrpc.core.RpcException;
 import cn.youyou.yyrpc.core.api.RpcRequest;
 import cn.youyou.yyrpc.core.api.RpcResponse;
 import cn.youyou.yyrpc.core.meta.ProviderMeta;
@@ -41,9 +42,9 @@ public class ProviderInvoker {
             rpcResponse.setData(result);
             return rpcResponse;
         } catch (IllegalAccessException e) {
-            rpcResponse.setEx(new RuntimeException(e.getMessage()));
+            rpcResponse.setEx(new RpcException(e.getMessage()));
         } catch (InvocationTargetException e) {
-            throw new RuntimeException(new RuntimeException(e.getTargetException().getMessage()));
+            rpcResponse.setEx(new RpcException(e.getTargetException().getMessage()));
         }
 
         return rpcResponse;
