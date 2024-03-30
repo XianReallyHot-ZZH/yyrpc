@@ -7,6 +7,7 @@ import cn.youyou.yyrpc.core.api.RpcContext;
 import cn.youyou.yyrpc.core.api.RpcRequest;
 import cn.youyou.yyrpc.core.api.RpcResponse;
 import cn.youyou.yyrpc.core.consumer.http.OkHttpInvoker;
+import cn.youyou.yyrpc.core.governance.SlidingTimeWindow;
 import cn.youyou.yyrpc.core.meta.InstanceMeta;
 import cn.youyou.yyrpc.core.util.MethodUtils;
 import cn.youyou.yyrpc.core.util.TypeUtils;
@@ -15,7 +16,13 @@ import lombok.extern.slf4j.Slf4j;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.net.SocketTimeoutException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 具体的代理逻辑
@@ -36,11 +43,34 @@ public class YYConsumerInvocationHandler implements InvocationHandler {
 
     private HttpInvoker httpInvoker;
 
+    // 触发半开状态的定时任务线程池
+    final ScheduledExecutorService executor;
+
+    // key对应实例，这里简化为实例的url，value为这个实例对应的滑窗
+    final Map<String, SlidingTimeWindow> windows = new HashMap<>();
+
+    // 当前被隔离的坏点（实例）
+    final List<InstanceMeta> isolatedProviders = new ArrayList<>();
+
+    // 当前等待被半开试错的实例
+    final List<InstanceMeta> halfOpenProviders = new ArrayList<>();
+
+
     public YYConsumerInvocationHandler(Class<?> service, RpcContext rpcContext, List<InstanceMeta> providers) {
         this.service = service;
         this.rpcContext = rpcContext;
         this.providers = providers;
         this.httpInvoker = new OkHttpInvoker(Integer.parseInt(rpcContext.getParameters().getOrDefault("app.timeout", "1000")));
+        this.executor = Executors.newScheduledThreadPool(1);
+        this.executor.scheduleWithFixedDelay(this::halfOpen, 10, 60, TimeUnit.SECONDS);
+    }
+
+    // 触发半开状态，将相应被隔离的实例，加入半开实例队列
+    private void halfOpen() {
+        log.debug(" ====> half open isolatedProviders: " + isolatedProviders);
+        // 清理掉上次的，以这次被隔离的实例为准
+        halfOpenProviders.clear();
+        halfOpenProviders.addAll(isolatedProviders);
     }
 
     @Override
@@ -70,12 +100,49 @@ public class YYConsumerInvocationHandler implements InvocationHandler {
                     }
                 }
 
-                List<InstanceMeta> instances = rpcContext.getRouter().route(providers);
-                InstanceMeta instance = rpcContext.getLoadBalancer().choose(instances);
-                log.debug("loadBalancer.choose(urls) ==> " + instance);
+                InstanceMeta instance;
+                // 半开检测
+                synchronized (halfOpenProviders) {
+                    if (halfOpenProviders.isEmpty()) {
+                        List<InstanceMeta> instances = rpcContext.getRouter().route(providers);
+                        instance = rpcContext.getLoadBalancer().choose(instances);
+                        log.debug("loadBalancer.choose(urls) ==> " + instance);
+                    } else {
+                        // 直接remove保证只能重试一次
+                        instance = halfOpenProviders.remove(0);
+                        System.out.println("半开熔断尝试，尝试实例信息： " + instance);
+                    }
+                }
 
-                RpcResponse<?> rpcResponse = httpInvoker.post(rpcRequest, instance.toUrl());
-                Object result = castReturnResult(method, rpcResponse);
+                // 异常检测与记录
+                Object result;
+                RpcResponse<?> rpcResponse;
+                String url = instance.toUrl();
+                try {
+                    rpcResponse = httpInvoker.post(rpcRequest, url);
+                    result = castReturnResult(method, rpcResponse);
+                } catch (Exception e) {
+                    synchronized (windows) {
+                        SlidingTimeWindow window = windows.computeIfAbsent(url, key -> new SlidingTimeWindow());
+                        window.record(System.currentTimeMillis());
+                        log.debug("instance {} in window with {}", url, window.getSum());
+                        if (window.getSum() > 10) {
+                            isolate(instance);
+                        }
+                    }
+                    // 影响本来的报错，不要影响本来的报错重试机制
+                    throw e;
+                }
+
+                // 半开检测后，如果访问正常了，那么将半开的实例，全开，放置可选实例池
+                synchronized (providers) {
+                    if (!providers.contains(instance)) {
+                        isolatedProviders.remove(instance);
+                        providers.add(instance);
+                        log.debug("instance {} is recovered, isolatedProviders={}, providers={}", instance, isolatedProviders, providers);
+                    }
+                }
+
                 // 嵌入过滤逻辑(后置过滤)
                 for (Filter filter : rpcContext.getFilters()) {
                     Object postResult = filter.postFilter(rpcRequest, rpcResponse, result);
@@ -93,6 +160,18 @@ public class YYConsumerInvocationHandler implements InvocationHandler {
             }
         }
         return null;
+    }
+
+    private void isolate(InstanceMeta instance) {
+        log.debug(" ==> isolate instance: " + instance);
+        // 从正常候选者中移除
+        providers.remove(instance);
+        log.debug(" 移除要隔离的实例后，当前可选实例池，providers = {}", providers);
+        // 添加进隔离的队列中
+        if (!isolatedProviders.contains(instance)) {
+            isolatedProviders.add(instance);
+        }
+        log.debug(" ==> isolatedProviders = {}", isolatedProviders);
     }
 
     private Object castReturnResult(Method method, RpcResponse rpcResponse) {

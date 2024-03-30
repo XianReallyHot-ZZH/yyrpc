@@ -5,12 +5,14 @@ import cn.youyou.yyrpc.core.api.RpcResponse;
 import cn.youyou.yyrpc.core.provider.ProviderBootstrap;
 import cn.youyou.yyrpc.core.provider.ProviderConfig;
 import cn.youyou.yyrpc.core.provider.ProviderInvoker;
+import cn.youyou.yyrpc.demo.api.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Import;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @SpringBootApplication
@@ -35,7 +37,18 @@ public class YyrpcDemoProviderApplication {
         return providerInvoker.invoke(request);
     }
 
+    @Autowired
+    private UserService userService;
 
+    // 模拟故障恢复和发生
+    @RequestMapping("/ports")
+    public RpcResponse<String> ports(@RequestParam("ports") String ports) {
+        userService.setTimeoutPorts(ports);
+        RpcResponse<String> response = new RpcResponse<>();
+        response.setStatus(true);
+        response.setData("OK:" + ports);
+        return response;
+    }
 
 
 }

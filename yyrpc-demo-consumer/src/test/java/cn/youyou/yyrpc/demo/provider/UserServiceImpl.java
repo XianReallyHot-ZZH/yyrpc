@@ -110,4 +110,9 @@ public class UserServiceImpl implements UserService {
         }
         return new User(1001, "YY1001-" + port);
     }
+
+    @Override
+    public void setTimeoutPorts(String timeoutPorts) {
+
+    }
 }
