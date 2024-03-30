@@ -49,6 +49,13 @@ public class ConsumerBootstrap implements ApplicationContextAware {
     @Value("${app.env}")
     private String env;
 
+    @Value("${app.retries}")
+    private int retries;
+
+    @Value("${app.timeout}")
+    private int timeout;
+
+
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
@@ -70,6 +77,8 @@ public class ConsumerBootstrap implements ApplicationContextAware {
         rpcContext.setLoadBalancer(loadBalancer);
         rpcContext.setRouter(router);
         rpcContext.setFilters(filters);
+        rpcContext.getParameters().put("app.retries", String.valueOf(retries));
+        rpcContext.getParameters().put("app.timeout", String.valueOf(timeout));
 
         // TODO：优化，扫描
         String[] beanDefinitionNames = applicationContext.getBeanDefinitionNames();
