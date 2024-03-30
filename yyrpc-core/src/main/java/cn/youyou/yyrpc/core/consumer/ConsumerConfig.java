@@ -9,6 +9,8 @@ import cn.youyou.yyrpc.core.registry.zk.ZkRegistryCenter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -63,6 +65,7 @@ public class ConsumerConfig {
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public RegistryCenter registryCenter() {
 //        return new RegistryCenter.StaticRegistryCenter(List.of(servers.split(",")));
         return new ZkRegistryCenter();
