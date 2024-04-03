@@ -6,6 +6,7 @@ import cn.youyou.yyrpc.core.meta.InstanceMeta;
 import cn.youyou.yyrpc.core.meta.ServiceMeta;
 import cn.youyou.yyrpc.core.registry.ChangedListener;
 import cn.youyou.yyrpc.core.registry.Event;
+import com.alibaba.fastjson.JSON;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.RetryPolicy;
@@ -19,6 +20,7 @@ import org.apache.zookeeper.CreateMode;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -44,7 +46,7 @@ public class ZkRegistryCenter implements RegistryCenter {
                 .namespace(root)
                 .retryPolicy(retryPolicy)
                 .build();
-        log.info("===>[ZkRegistryCenter] zk client starting.");
+        log.info("===>[ZkRegistryCenter] zk client starting to server[" + server + "/" + root + "].");
         client.start();
         log.info("===>[ZkRegistryCenter] zk client started.");
     }
@@ -65,11 +67,11 @@ public class ZkRegistryCenter implements RegistryCenter {
         try {
             // 创建服务路径
             if (client.checkExists().forPath(servicePath) == null) {
-                client.create().withMode(CreateMode.PERSISTENT).forPath(servicePath, "service".getBytes());
+                client.create().withMode(CreateMode.PERSISTENT).forPath(servicePath, service.toMetas().getBytes());
             }
             // 创建服务提供者的临时节点信息
             String instancePath = servicePath + "/" + instance.toPath();
-            client.create().withMode(CreateMode.EPHEMERAL).forPath(instancePath, "provider".getBytes());
+            client.create().withMode(CreateMode.EPHEMERAL).forPath(instancePath, instance.toMetas().getBytes());
             log.info("===>[ZkRegistryCenter] register to zk, provider: " + instancePath);
         } catch (Exception e) {
             throw new RpcException(e);
@@ -101,17 +103,28 @@ public class ZkRegistryCenter implements RegistryCenter {
         try {
             List<String> nodes = client.getChildren().forPath(servicePath);
             log.info(" ===>[ZkRegistryCenter] service=" + service.getName() + ", fetchAll nodes from zk: " + servicePath);
-            nodes.forEach(System.out::println);
-            return mapInstances(nodes);
+            return mapInstances(nodes, servicePath);
         } catch (Exception e) {
             throw new RpcException(e);
         }
     }
 
-    private List<InstanceMeta> mapInstances(List<String> nodes) {
+    private List<InstanceMeta> mapInstances(List<String> nodes, String servicePath) {
         return nodes.stream().map(x -> {
             String[] strings = x.split("_");
-            return InstanceMeta.http(strings[0], Integer.valueOf(strings[1]));
+            InstanceMeta instance = InstanceMeta.http(strings[0], Integer.valueOf(strings[1]));
+            log.info("instance ==> " + instance.toPath());
+            String nodePath = servicePath + "/" + x;
+            byte[] bytes;
+            try {
+                bytes = client.getData().forPath(nodePath);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            HashMap params = JSON.parseObject(new String(bytes), HashMap.class);
+            params.forEach((k, v) -> log.info(k + "->" + v));
+            instance.setParameters(params);
+            return instance;
         }).collect(Collectors.toList());
 
     }

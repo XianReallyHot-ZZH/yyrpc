@@ -22,7 +22,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User findById(int id) {
-        return new User(id, "YY-" + environment.getProperty("server.port") + "_" + System.currentTimeMillis());
+        return new User(id, "YY-V1" + environment.getProperty("server.port") + "_" + System.currentTimeMillis());
     }
 
     @Override

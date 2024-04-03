@@ -3,10 +3,12 @@ package cn.youyou.yyrpc.core.consumer;
 import cn.youyou.yyrpc.core.api.LoadBalancer;
 import cn.youyou.yyrpc.core.api.RegistryCenter;
 import cn.youyou.yyrpc.core.api.Router;
+import cn.youyou.yyrpc.core.cluster.GrayRouter;
 import cn.youyou.yyrpc.core.cluster.RoundRibonLoadBalancer;
 import cn.youyou.yyrpc.core.filter.CacheFilter;
 import cn.youyou.yyrpc.core.registry.zk.ZkRegistryCenter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -18,6 +20,9 @@ import org.springframework.core.annotation.Order;
 @Configuration
 @Slf4j
 public class ConsumerConfig {
+
+    @Value("${app.grayRatio}")
+    private int grayRatio;
 
     @Bean
     ConsumerBootstrap createConsumerBootstrap() {
@@ -61,7 +66,7 @@ public class ConsumerConfig {
      */
     @Bean
     public Router router() {
-        return Router.Default;
+        return new GrayRouter(grayRatio);
     }
 
     @Bean

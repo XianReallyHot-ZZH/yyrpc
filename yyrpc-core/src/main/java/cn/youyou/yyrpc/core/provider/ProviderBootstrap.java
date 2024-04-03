@@ -55,6 +55,9 @@ public class ProviderBootstrap implements ApplicationContextAware {
     @Value("${app.env}")
     private String env;
 
+    @Value("#{${app.metas}}")
+    private Map<String, String> metas;
+
 
     // 实现了ApplicationContextAware接口，Spring容器会在创建该Bean之后，自动调用该Bean的setApplicationContext()方法，调用该方法时，会将容器本身作为参数传给该方法
     @Override
@@ -82,6 +85,7 @@ public class ProviderBootstrap implements ApplicationContextAware {
     @SneakyThrows
     public void start() {
         instance = InstanceMeta.http(InetAddress.getLocalHost().getHostAddress(), Integer.valueOf(port));
+        instance.getParameters().putAll(metas);
         rc.start();
         skeleton.keySet().forEach(this::registerService);
     }

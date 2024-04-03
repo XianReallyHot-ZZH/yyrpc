@@ -1,10 +1,13 @@
 package cn.youyou.yyrpc.demo.consumer;
 
 import cn.youyou.yyrpc.core.annotation.YYConsumer;
+import cn.youyou.yyrpc.core.api.Router;
+import cn.youyou.yyrpc.core.cluster.GrayRouter;
 import cn.youyou.yyrpc.core.consumer.ConsumerConfig;
 import cn.youyou.yyrpc.demo.api.OrderService;
 import cn.youyou.yyrpc.demo.api.User;
 import cn.youyou.yyrpc.demo.api.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -45,6 +48,17 @@ public class YyrpcDemoConsumerApplication {
         return userService.find(timeout);
     }
 
+
+    @Autowired
+    Router router;
+
+    // 模拟修改灰度比例配置
+    @RequestMapping("/gray/")
+    public String gray(@RequestParam("ratio") int ratio) {
+        ((GrayRouter)router).setGrayRatio(ratio);
+        return "OK-new gray ratio is " + ratio;
+    }
+
     @Bean
     public ApplicationRunner consumerRunnerTest() {
         return args -> {
@@ -52,7 +66,7 @@ public class YyrpcDemoConsumerApplication {
 //            userService.find(10);
 //            System.out.println("userService.find（模拟超时） take " + (System.currentTimeMillis()-start) + " ms");
 
-            testAll();
+//            testAll();
         };
     }
 
