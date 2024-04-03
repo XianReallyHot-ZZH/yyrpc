@@ -10,6 +10,7 @@ import org.springframework.util.MultiValueMap;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,20 +31,22 @@ public class ProviderInvoker {
      * @param request
      * @return
      */
-    public RpcResponse<?> invoke(RpcRequest request) {
-        RpcResponse rpcResponse = new RpcResponse();
+    public RpcResponse<Object> invoke(RpcRequest request) {
+        RpcResponse<Object> rpcResponse = new RpcResponse<>();
         List<ProviderMeta> providerMetas = skeleton.get(request.getService());
         try {
             ProviderMeta providerMeta = findProviderMeta(providerMetas, request.getMethodSign());
             Method method = providerMeta.getMethod();
-            Object[] args = processArgs(request.getArgs(), method.getParameterTypes());
+            Object[] args = processArgs(request.getArgs(), method.getParameterTypes(), method.getGenericParameterTypes());
             Object result = method.invoke(providerMeta.getServiceImpl(), args);
             rpcResponse.setStatus(Boolean.TRUE);
             rpcResponse.setData(result);
             return rpcResponse;
         } catch (IllegalAccessException e) {
+            e.printStackTrace();
             rpcResponse.setEx(new RpcException(e.getMessage()));
         } catch (InvocationTargetException e) {
+            e.printStackTrace();
             rpcResponse.setEx(new RpcException(e.getTargetException().getMessage()));
         }
 
@@ -55,15 +58,16 @@ public class ProviderInvoker {
      *
      * @param args
      * @param parameterTypes
+     * @param genericParameterTypes
      * @return
      */
-    private Object[] processArgs(Object[] args, Class<?>[] parameterTypes) {
+    private Object[] processArgs(Object[] args, Class<?>[] parameterTypes, Type[] genericParameterTypes) {
         if (args == null || args.length < 1) {
             return args;
         }
         Object[] actuals = new Object[args.length];
         for (int i = 0; i < actuals.length; i++) {
-            actuals[i] = TypeUtils.cast(args[i], parameterTypes[i]);
+            actuals[i] = TypeUtils.castGeneric(args[i], parameterTypes[i], genericParameterTypes[i]);
         }
         return actuals;
     }
