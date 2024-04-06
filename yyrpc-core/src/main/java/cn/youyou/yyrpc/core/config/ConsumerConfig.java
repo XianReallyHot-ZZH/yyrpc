@@ -1,52 +1,33 @@
-package cn.youyou.yyrpc.core.consumer;
+package cn.youyou.yyrpc.core.config;
 
 import cn.youyou.yyrpc.core.api.*;
 import cn.youyou.yyrpc.core.cluster.GrayRouter;
 import cn.youyou.yyrpc.core.cluster.RoundRibonLoadBalancer;
+import cn.youyou.yyrpc.core.consumer.ConsumerBootstrap;
 import cn.youyou.yyrpc.core.filter.ParameterFilter;
 import cn.youyou.yyrpc.core.registry.zk.ZkRegistryCenter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
 
 import java.util.List;
 
 @Configuration
 @Slf4j
+@Import({AppConfigProperties.class, ConsumerConfigProperties.class})
 public class ConsumerConfig {
 
-    @Value("${app.grayRatio:0}")
-    private int grayRatio;
+    @Autowired
+    AppConfigProperties appConfigProperties;
 
-    @Value("${app.id:app1}")
-    private String app;
-
-    @Value("${app.namespace:public}")
-    private String namespace;
-
-    @Value("${app.env:dev}")
-    private String env;
-
-    @Value("${app.retries:1}")
-    private int retries;
-
-    @Value("${app.timeout:1000}")
-    private int timeout;
-
-    @Value("${app.faultLimit:10}")
-    private int faultLimit;
-
-    @Value("${app.halfOpenInitialDelay:10000}")
-    private int halfOpenInitialDelay;
-
-    @Value("${app.halfOpenDelay:60000}")
-    private int halfOpenDelay;
+    @Autowired
+    ConsumerConfigProperties consumerConfigProperties;
 
 
     @Bean
@@ -91,7 +72,7 @@ public class ConsumerConfig {
      */
     @Bean
     public Router router() {
-        return new GrayRouter(grayRatio);
+        return new GrayRouter(consumerConfigProperties.getGrayRatio());
     }
 
     @Bean
@@ -114,14 +95,14 @@ public class ConsumerConfig {
         rpcContext.setLoadBalancer(loadBalancer);
         rpcContext.setRouter(router);
         rpcContext.setFilters(filters);
-        rpcContext.getParameters().put("app.id", app);
-        rpcContext.getParameters().put("app.namespace", namespace);
-        rpcContext.getParameters().put("app.env", env);
-        rpcContext.getParameters().put("app.retries", String.valueOf(retries));
-        rpcContext.getParameters().put("app.timeout", String.valueOf(timeout));
-        rpcContext.getParameters().put("app.halfOpenInitialDelay", String.valueOf(halfOpenInitialDelay));
-        rpcContext.getParameters().put("app.faultLimit", String.valueOf(faultLimit));
-        rpcContext.getParameters().put("app.halfOpenDelay", String.valueOf(halfOpenDelay));
+        rpcContext.getParameters().put("app.id", appConfigProperties.getId());
+        rpcContext.getParameters().put("app.namespace", appConfigProperties.getNamespace());
+        rpcContext.getParameters().put("app.env", appConfigProperties.getEnv());
+        rpcContext.getParameters().put("app.retries", String.valueOf(consumerConfigProperties.getRetries()));
+        rpcContext.getParameters().put("app.timeout", String.valueOf(consumerConfigProperties.getTimeout()));
+        rpcContext.getParameters().put("app.halfOpenInitialDelay", String.valueOf(consumerConfigProperties.getHalfOpenInitialDelay()));
+        rpcContext.getParameters().put("app.faultLimit", String.valueOf(consumerConfigProperties.getFaultLimit()));
+        rpcContext.getParameters().put("app.halfOpenDelay", String.valueOf(consumerConfigProperties.getHalfOpenDelay()));
         return rpcContext;
     }
 

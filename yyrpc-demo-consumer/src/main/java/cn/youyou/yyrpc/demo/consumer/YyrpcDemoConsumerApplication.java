@@ -4,7 +4,7 @@ import cn.youyou.yyrpc.core.annotation.YYConsumer;
 import cn.youyou.yyrpc.core.api.Router;
 import cn.youyou.yyrpc.core.api.RpcContext;
 import cn.youyou.yyrpc.core.cluster.GrayRouter;
-import cn.youyou.yyrpc.core.consumer.ConsumerConfig;
+import cn.youyou.yyrpc.core.config.ConsumerConfig;
 import cn.youyou.yyrpc.demo.api.OrderService;
 import cn.youyou.yyrpc.demo.api.User;
 import cn.youyou.yyrpc.demo.api.UserService;

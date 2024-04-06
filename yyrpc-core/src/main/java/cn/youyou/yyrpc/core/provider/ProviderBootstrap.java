@@ -2,6 +2,8 @@ package cn.youyou.yyrpc.core.provider;
 
 import cn.youyou.yyrpc.core.annotation.YYProvider;
 import cn.youyou.yyrpc.core.api.RegistryCenter;
+import cn.youyou.yyrpc.core.config.AppConfigProperties;
+import cn.youyou.yyrpc.core.config.ProviderConfigProperties;
 import cn.youyou.yyrpc.core.meta.InstanceMeta;
 import cn.youyou.yyrpc.core.meta.ProviderMeta;
 import cn.youyou.yyrpc.core.meta.ServiceMeta;
@@ -44,20 +46,14 @@ public class ProviderBootstrap implements ApplicationContextAware {
 
     private String port;
 
-    private String app;
+    private AppConfigProperties appProperties;
 
-    private String namespace;
+    private ProviderConfigProperties providerProperties;
 
-    private String env;
-
-    private Map<String, String> metas;
-
-    public ProviderBootstrap(String port, String app, String namespace, String env, Map<String, String> metas) {
+    public ProviderBootstrap(String port, AppConfigProperties appProperties, ProviderConfigProperties providerProperties) {
         this.port = port;
-        this.app = app;
-        this.namespace = namespace;
-        this.env = env;
-        this.metas = metas;
+        this.appProperties = appProperties;
+        this.providerProperties = providerProperties;
     }
 
 
@@ -87,7 +83,7 @@ public class ProviderBootstrap implements ApplicationContextAware {
     @SneakyThrows
     public void start() {
         instance = InstanceMeta.http(InetAddress.getLocalHost().getHostAddress(), Integer.valueOf(port))
-                .addParams(metas);
+                .addParams(providerProperties.getMetas());
         rc.start();
         skeleton.keySet().forEach(this::registerService);
     }
@@ -102,12 +98,21 @@ public class ProviderBootstrap implements ApplicationContextAware {
     }
 
     private void registerService(String service) {
-        ServiceMeta serviceMeta = ServiceMeta.builder().app(app).namespace(namespace).env(env).name(service).build();
+        ServiceMeta serviceMeta = ServiceMeta.builder()
+                .app(appProperties.getId())
+                .namespace(appProperties.getNamespace())
+                .env(appProperties.getEnv())
+                .name(service)
+                .build();
         rc.register(serviceMeta, instance);
     }
 
     private void unRegisterService(String service) {
-        ServiceMeta serviceMeta = ServiceMeta.builder().app(app).namespace(namespace).env(env).name(service).build();
+        ServiceMeta serviceMeta = ServiceMeta.builder()
+                .app(appProperties.getId())
+                .namespace(appProperties.getNamespace())
+                .env(appProperties.getEnv())
+                .name(service).build();
         rc.unRegister(serviceMeta, instance);
     }
 

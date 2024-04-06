@@ -1,7 +1,7 @@
 package cn.youyou.yyrpc.core.annotation;
 
-import cn.youyou.yyrpc.core.consumer.ConsumerConfig;
-import cn.youyou.yyrpc.core.provider.ProviderConfig;
+import cn.youyou.yyrpc.core.config.ConsumerConfig;
+import cn.youyou.yyrpc.core.config.ProviderConfig;
 import org.springframework.context.annotation.Import;
 
 import java.lang.annotation.*;

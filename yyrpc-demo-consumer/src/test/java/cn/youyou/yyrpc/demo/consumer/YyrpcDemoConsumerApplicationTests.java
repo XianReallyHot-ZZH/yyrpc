@@ -32,8 +32,13 @@ class YyrpcDemoConsumerApplicationTests {
         System.out.println(" ====================================== ");
         System.out.println(" ====================================== ");
         context1 = SpringApplication.run(YyrpcDemoProviderApplication.class,
-                "--server.port=8094", "--kkrpc.zkServer=localhost:2182",
-                "--logging.level.cn.kimmking.kkrpc=info","--app.metas={dc:'bj',gray:'false',unit:'B001'}");
+                "--server.port=8094",
+                "--yyrpc.zk.server=localhost:2182",
+                "--yyrpc.app.env=test",
+                "--logging.level.cn.youyou.yyrpc=info",
+                "--yyrpc.provider.metas.dc=bj",
+                "--yyrpc.provider.metas.gray=false",
+                "--yyrpc.provider.metas.unit=B001");
 
         System.out.println(" ====================================== ");
         System.out.println(" ====================================== ");
@@ -41,8 +46,13 @@ class YyrpcDemoConsumerApplicationTests {
         System.out.println(" ====================================== ");
         System.out.println(" ====================================== ");
         context2 = SpringApplication.run(YyrpcDemoProviderApplication.class,
-                "--server.port=8095", "--kkrpc.zkServer=localhost:2182",
-                "--logging.level.cn.kimmking.kkrpc=info","--app.metas={dc:'bj',gray:'false',unit:'B001'}");
+                "--server.port=8095",
+                "--yyrpc.zk.server=localhost:2182",
+                "--yyrpc.app.env=test",
+                "--logging.level.cn.youyou.yyrpc=info",
+                "--yyrpc.provider.metas.dc=bj",
+                "--yyrpc.provider.metas.gray=false",
+                "--yyrpc.provider.metas.unit=B002");
 
     }
 

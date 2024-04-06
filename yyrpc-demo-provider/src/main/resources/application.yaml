@@ -3,14 +3,18 @@ server:
   port: 8081
 
 yyrpc:
-  zkServer: localhost:2181
-  zkRoot: yyrpc
-
-app:
-  id: app1
-  namespace: public
-  env: dev
-  metas: "{dc: 'bj', gray: 'false', unit: 'B001'}"
+  zk:
+    server: localhost:2181
+    root: yyrpc
+  app:
+    id: app1
+    namespace: public
+    env: dev
+  provider:
+    metas:
+      dc: bj
+      gray: false
+      unit: B001
 
 logging:
   level:

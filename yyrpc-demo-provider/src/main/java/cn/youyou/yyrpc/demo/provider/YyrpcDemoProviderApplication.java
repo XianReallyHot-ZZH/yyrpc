@@ -2,7 +2,7 @@ package cn.youyou.yyrpc.demo.provider;
 
 import cn.youyou.yyrpc.core.api.RpcRequest;
 import cn.youyou.yyrpc.core.api.RpcResponse;
-import cn.youyou.yyrpc.core.provider.ProviderConfig;
+import cn.youyou.yyrpc.core.config.ProviderConfig;
 import cn.youyou.yyrpc.core.transport.SpringBootTransport;
 import cn.youyou.yyrpc.demo.api.User;
 import cn.youyou.yyrpc.demo.api.UserService;
