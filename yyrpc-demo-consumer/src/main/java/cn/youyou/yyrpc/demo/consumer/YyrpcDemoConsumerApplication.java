@@ -2,6 +2,7 @@ package cn.youyou.yyrpc.demo.consumer;
 
 import cn.youyou.yyrpc.core.annotation.YYConsumer;
 import cn.youyou.yyrpc.core.api.Router;
+import cn.youyou.yyrpc.core.api.RpcContext;
 import cn.youyou.yyrpc.core.cluster.GrayRouter;
 import cn.youyou.yyrpc.core.consumer.ConsumerConfig;
 import cn.youyou.yyrpc.demo.api.OrderService;
@@ -168,6 +169,20 @@ public class YyrpcDemoConsumerApplication {
 //        userService.find(1100);
 //        System.out.println("userService.find take "
 //                + (System.currentTimeMillis()-start) + " ms");
+
+        System.out.println("Case 19. >>===[测试通过Context跨消费者和提供者进行传参]===");
+        String KEY_VERSION = "rpc.version";
+        String KEY_MESSAGE = "rpc.message";
+        RpcContext.ContextParameters.get().put(KEY_VERSION, "v8");
+        RpcContext.ContextParameters.get().put(KEY_MESSAGE, "this is a test message");
+        RpcContext.ContextParameters.get().put("KEY_HAHA", "HAHAHA V8");
+        String version = userService.echoParameter(KEY_VERSION);
+        System.out.println(" ===> echo parameter from c->p->c: " + KEY_VERSION + " -> " + version);
+
+        RpcContext.ContextParameters.get().put(KEY_VERSION, "v9");
+        RpcContext.ContextParameters.get().put(KEY_MESSAGE, "this is a test message V9");
+        String message = userService.echoParameter(KEY_MESSAGE);
+        System.out.println(" ===> echo parameter from c->p->c: " + KEY_MESSAGE + " -> " + message);
 
     }
 

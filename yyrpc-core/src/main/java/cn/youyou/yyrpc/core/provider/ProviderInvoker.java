@@ -1,10 +1,12 @@
 package cn.youyou.yyrpc.core.provider;
 
 import cn.youyou.yyrpc.core.RpcException;
+import cn.youyou.yyrpc.core.api.RpcContext;
 import cn.youyou.yyrpc.core.api.RpcRequest;
 import cn.youyou.yyrpc.core.api.RpcResponse;
 import cn.youyou.yyrpc.core.meta.ProviderMeta;
 import cn.youyou.yyrpc.core.util.TypeUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
@@ -17,6 +19,7 @@ import java.util.Optional;
 /**
  * 负责服务端接受请求后的服务调用工作
  */
+@Slf4j
 public class ProviderInvoker {
 
     private MultiValueMap<String, ProviderMeta> skeleton = new LinkedMultiValueMap<>();
@@ -32,6 +35,11 @@ public class ProviderInvoker {
      * @return
      */
     public RpcResponse<Object> invoke(RpcRequest request) {
+        log.debug(" ===> ProviderInvoker.invoke(request:{})", request);
+        // 获取跨节点参数
+        if (!request.getParams().isEmpty()) {
+            request.getParams().forEach(RpcContext::setContextParameters);
+        }
         RpcResponse<Object> rpcResponse = new RpcResponse<>();
         List<ProviderMeta> providerMetas = skeleton.get(request.getService());
         try {
@@ -48,8 +56,11 @@ public class ProviderInvoker {
         } catch (InvocationTargetException e) {
 //            e.printStackTrace();
             rpcResponse.setEx(new RpcException(e.getTargetException().getMessage()));
+        } finally {
+            // 释放跨节点参数，因为这个是可线程绑定的，要释放
+            RpcContext.ContextParameters.get().clear();
         }
-
+        log.debug(" ===> ProviderInvoker.invoke() = {}", rpcResponse);
         return rpcResponse;
     }
 

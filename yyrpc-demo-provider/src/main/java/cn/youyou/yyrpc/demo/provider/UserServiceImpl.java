@@ -1,6 +1,7 @@
 package cn.youyou.yyrpc.demo.provider;
 
 import cn.youyou.yyrpc.core.annotation.YYProvider;
+import cn.youyou.yyrpc.core.api.RpcContext;
 import cn.youyou.yyrpc.demo.api.User;
 import cn.youyou.yyrpc.demo.api.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -126,5 +127,17 @@ public class UserServiceImpl implements UserService {
     @Override
     public void setTimeoutPorts(String timeoutPorts) {
         this.timeoutPorts = timeoutPorts;
+    }
+
+    /**
+     * 获取打印跨节点传参的指定参数，并顺便打印一下
+     * @param key
+     * @return
+     */
+    @Override
+    public String echoParameter(String key) {
+        System.out.println(" ====>> RpcContext.ContextParameters: ");
+        RpcContext.ContextParameters.get().forEach((k, v) -> System.out.println(k + " -> " + v));
+        return RpcContext.ContextParameters.get().get(key);
     }
 }

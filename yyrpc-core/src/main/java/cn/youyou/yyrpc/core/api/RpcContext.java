@@ -18,4 +18,22 @@ public class RpcContext {
 
     private Map<String, String> parameters = new HashMap<>();
 
+    public static ThreadLocal<Map<String, String>> ContextParameters = new ThreadLocal<>() {
+        @Override
+        protected Map<String, String> initialValue() {
+            return new HashMap<>();
+        }
+    };
+
+    public static void setContextParameters(String key, String value) {
+        ContextParameters.get().put(key, value);
+    }
+
+    public static String getContextParameters(String key) {
+        return ContextParameters.get().get(key);
+    }
+
+    public static String removeContextParameters(String key) {
+        return ContextParameters.get().remove(key);
+    }
 }
