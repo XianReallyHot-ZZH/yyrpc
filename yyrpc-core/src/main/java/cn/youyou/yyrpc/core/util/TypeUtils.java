@@ -83,37 +83,22 @@ public class TypeUtils {
     }
 
     public static Object castMethodResult(Method method, Object data) {
+        log.debug("castMethodResult: method = " + method);
+        log.debug("castMethodResult: data = " + data);
         Class<?> type = method.getReturnType();
         Type genericReturnType = method.getGenericReturnType();
         return castGeneric(data, type, genericReturnType);
     }
 
     public static Object castGeneric(Object data, Class<?> type, Type genericReturnType) {
-        // 反解析RpcResponse里的data数据到对应的数据类型
-        log.debug("method.getReturnType() = " + type);
-        log.debug("method.getGenericReturnType() = " + genericReturnType);
+        log.debug("castGeneric: data = " + data);
+        log.debug("castGeneric: method.getReturnType() = " + type);
+        log.debug("castGeneric: method.getGenericReturnType() = " + genericReturnType);
 
         // 请求端发起请求，接受来自服务端的返回时，对象在通过http接受时会被序列化成JSONObject
-        if (data instanceof JSONObject jsonObject) {
+        if (data instanceof Map map) {      // data是map的情况包括两种，一种是HashMap，一种是JSONObject
             if (Map.class.isAssignableFrom(type)) {
-                Map resultMap = new HashMap();
-                log.debug(genericReturnType.toString());
-                if (genericReturnType instanceof ParameterizedType parameterizedType) {
-                    Type keyType = parameterizedType.getActualTypeArguments()[0];
-                    Type valueType = parameterizedType.getActualTypeArguments()[1];
-                    log.debug("keyType  : " + keyType);
-                    log.debug("valueType: " + valueType);
-                    jsonObject.forEach((key, value) -> {
-                        Object keyObject = cast(key, (Class<?>) keyType);
-                        Object valueObject = cast(value, (Class<?>) valueType);
-                        resultMap.put(keyObject, valueObject);
-                    });
-                }
-                return resultMap;
-            }
-            return jsonObject.toJavaObject(type);
-        } else if (data instanceof Map map) {
-            if (Map.class.isAssignableFrom(type) && genericReturnType != null) {
+                log.debug(" ======> map -> map");
                 Map resultMap = new HashMap();
                 log.debug(genericReturnType.toString());
                 if (genericReturnType instanceof ParameterizedType parameterizedType) {
@@ -128,8 +113,16 @@ public class TypeUtils {
                     });
                 }
                 return resultMap;
-            } else {
-                return cast(data, type);
+            }
+            if(data instanceof JSONObject jsonObject) {// 此时是Pojo，且数据是JO
+                log.debug(" ======> JSONObject -> Pojo");
+                return jsonObject.toJavaObject(type);
+            }else if(!Map.class.isAssignableFrom(type)){ // 此时是Pojo类型，数据是Map
+                log.debug(" ======> map -> Pojo");
+                return new JSONObject(map).toJavaObject(type);
+            }else {
+                log.debug(" ======> map -> ?");
+                return data;
             }
         } else if (data instanceof List list) {
             Object[] array = list.toArray();

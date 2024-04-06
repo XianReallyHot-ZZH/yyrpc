@@ -15,7 +15,7 @@ app:
   env: dev
   retries: 2
   timeout: 1000
-  grayRatio: 20
+  grayRatio: 33
 
 logging:
   level:

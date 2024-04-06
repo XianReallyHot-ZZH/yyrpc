@@ -66,7 +66,7 @@ public class YyrpcDemoConsumerApplication {
 //            userService.find(10);
 //            System.out.println("userService.find（模拟超时） take " + (System.currentTimeMillis()-start) + " ms");
 
-//            testAll();
+            testAll();
         };
     }
 
@@ -152,13 +152,13 @@ public class YyrpcDemoConsumerApplication {
         User user100 = userService.ex(false);
         System.out.println(user100);
 
-        System.out.println("Case 17. >>===[测试服务端抛出一个RuntimeException异常]===");
-        try {
-            User userEx = userService.ex(true);
-            System.out.println(userEx);
-        } catch (RuntimeException e) {
-            System.out.println(" ===> exception: " + e.getMessage());
-        }
+//        System.out.println("Case 17. >>===[测试服务端抛出一个RuntimeException异常]===");
+//        try {
+//            User userEx = userService.ex(true);
+//            System.out.println(userEx);
+//        } catch (RuntimeException e) {
+//            System.out.println(" ===> exception: " + e.getMessage());
+//        }
 
 //        System.out.println("Case 18. >>===[测试服务端抛出一个超时重试后成功的场景]===");
 //        // 超时设置的【漏斗原则】
