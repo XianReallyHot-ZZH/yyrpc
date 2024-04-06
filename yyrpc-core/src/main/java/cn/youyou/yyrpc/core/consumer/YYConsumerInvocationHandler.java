@@ -62,7 +62,9 @@ public class YYConsumerInvocationHandler implements InvocationHandler {
         this.providers = providers;
         this.httpInvoker = new OkHttpInvoker(Integer.parseInt(rpcContext.getParameters().getOrDefault("app.timeout", "1000")));
         this.executor = Executors.newScheduledThreadPool(1);
-        this.executor.scheduleWithFixedDelay(this::halfOpen, 10, 60, TimeUnit.SECONDS);
+        int halfOpenInitialDelay = Integer.parseInt(rpcContext.getParameters().getOrDefault("app.halfOpenInitialDelay", "10000"));
+        int halfOpenDelay = Integer.parseInt(rpcContext.getParameters().getOrDefault("app.halfOpenDelay", "60000"));
+        this.executor.scheduleWithFixedDelay(this::halfOpen, halfOpenInitialDelay, halfOpenDelay, TimeUnit.MILLISECONDS);
     }
 
     // 触发半开状态，将相应被隔离的实例，加入半开实例队列
@@ -87,6 +89,7 @@ public class YYConsumerInvocationHandler implements InvocationHandler {
         rpcRequest.setArgs(args);
 
         int retries = Integer.parseInt(rpcContext.getParameters().getOrDefault("app.retries", "1"));
+        int faultLimit = Integer.parseInt(rpcContext.getParameters().getOrDefault("app.faultLimit", "10"));
 
         while (retries-- > 0) {
             log.debug(" ===> reties: " + retries);
@@ -126,7 +129,7 @@ public class YYConsumerInvocationHandler implements InvocationHandler {
                         SlidingTimeWindow window = windows.computeIfAbsent(url, key -> new SlidingTimeWindow());
                         window.record(System.currentTimeMillis());
                         log.debug("instance {} in window with {}", url, window.getSum());
-                        if (window.getSum() > 10) {
+                        if (window.getSum() > faultLimit) {
                             isolate(instance);
                         }
                     }

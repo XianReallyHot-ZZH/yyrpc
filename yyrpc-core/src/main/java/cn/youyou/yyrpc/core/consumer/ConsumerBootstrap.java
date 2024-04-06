@@ -55,6 +55,15 @@ public class ConsumerBootstrap implements ApplicationContextAware {
     @Value("${app.timeout}")
     private int timeout;
 
+    @Value("${app.faultLimit}")
+    private int faultLimit;
+
+    @Value("${app.halfOpenInitialDelay}")
+    private int halfOpenInitialDelay;
+
+    @Value("${app.halfOpenDelay}")
+    private int halfOpenDelay;
+
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
@@ -67,18 +76,9 @@ public class ConsumerBootstrap implements ApplicationContextAware {
      * 2、负责扫描spring容器，从中获取属性上添加了@YYConsumer注解的bean，对其相应的属性进行注入；
      */
     public void start() {
-        LoadBalancer loadBalancer = applicationContext.getBean(LoadBalancer.class);
-        Router router = applicationContext.getBean(Router.class);
         rc = applicationContext.getBean(RegistryCenter.class);
         rc.start();
-        List<Filter> filters = applicationContext.getBeansOfType(Filter.class).values().stream().toList();
-
-        RpcContext rpcContext = new RpcContext();
-        rpcContext.setLoadBalancer(loadBalancer);
-        rpcContext.setRouter(router);
-        rpcContext.setFilters(filters);
-        rpcContext.getParameters().put("app.retries", String.valueOf(retries));
-        rpcContext.getParameters().put("app.timeout", String.valueOf(timeout));
+        RpcContext rpcContext = createContext();
 
         // TODO：优化，扫描
         String[] beanDefinitionNames = applicationContext.getBeanDefinitionNames();
@@ -97,6 +97,24 @@ public class ConsumerBootstrap implements ApplicationContextAware {
         rc.stop();
     }
 
+
+    private RpcContext createContext() {
+        LoadBalancer loadBalancer = applicationContext.getBean(LoadBalancer.class);
+        Router router = applicationContext.getBean(Router.class);
+        List<Filter> filters = applicationContext.getBeansOfType(Filter.class).values().stream().toList();
+        RpcContext rpcContext = new RpcContext();
+        rpcContext.setLoadBalancer(loadBalancer);
+        rpcContext.setRouter(router);
+        rpcContext.setFilters(filters);
+        rpcContext.getParameters().put("app.retries", String.valueOf(retries));
+        rpcContext.getParameters().put("app.timeout", String.valueOf(timeout));
+        rpcContext.getParameters().put("app.halfOpenInitialDelay", String.valueOf(halfOpenInitialDelay));
+        rpcContext.getParameters().put("app.faultLimit", String.valueOf(faultLimit));
+        rpcContext.getParameters().put("app.halfOpenDelay", String.valueOf(halfOpenDelay));
+        return rpcContext;
+    }
+
+
     /**
      * 遍历属性，进行代理注入,顺便完成代码存根管理
      *
@@ -105,17 +123,19 @@ public class ConsumerBootstrap implements ApplicationContextAware {
      */
     private void serviceProxyInject(Object bean, List<Field> fields, RpcContext rpcContext, RegistryCenter registryCenter) {
         fields.forEach(field -> {
-            log.info(" ===> Consumer(@YYConsumer) beanName: " + bean.getClass().getCanonicalName() + ", FieldName: " + field.getName());
+            Class<?> service = field.getType();
+            String serviceCanonicalName = service.getCanonicalName();
+            log.info(" ===> Consumer(@YYConsumer) beanName: " + serviceCanonicalName + ", FieldName: " + field.getName());
             try {
-                Class<?> service = field.getType();
-                String serviceCanonicalName = service.getCanonicalName();
                 // 存根管理+进行代理生成,这里用动态代理
                 Object serviceProxy = stub.computeIfAbsent(serviceCanonicalName, k -> createServiceFromRegistryCenter(service, rpcContext, registryCenter));
                 // 反射注入
                 field.setAccessible(true);
                 field.set(bean, serviceProxy);
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
+            } catch (Exception ex) {
+                // ignore and print it
+                log.warn(" ==> Field[{}.{}] create consumer failed.", serviceCanonicalName, field.getName());
+                log.error("Ignore and print it as: ", ex);
             }
         });
     }

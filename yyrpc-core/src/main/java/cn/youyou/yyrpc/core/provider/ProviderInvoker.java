@@ -42,11 +42,11 @@ public class ProviderInvoker {
             rpcResponse.setStatus(Boolean.TRUE);
             rpcResponse.setData(result);
             return rpcResponse;
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
+        } catch (IllegalAccessException | IllegalArgumentException e) {
+//            e.printStackTrace();
             rpcResponse.setEx(new RpcException(e.getMessage()));
         } catch (InvocationTargetException e) {
-            e.printStackTrace();
+//            e.printStackTrace();
             rpcResponse.setEx(new RpcException(e.getTargetException().getMessage()));
         }
 
@@ -65,11 +65,11 @@ public class ProviderInvoker {
         if (args == null || args.length < 1) {
             return args;
         }
-        Object[] actuals = new Object[args.length];
-        for (int i = 0; i < actuals.length; i++) {
-            actuals[i] = TypeUtils.castGeneric(args[i], parameterTypes[i], genericParameterTypes[i]);
+        Object[] actual = new Object[args.length];
+        for (int i = 0; i < actual.length; i++) {
+            actual[i] = TypeUtils.castGeneric(args[i], parameterTypes[i], genericParameterTypes[i]);
         }
-        return actuals;
+        return actual;
     }
 
     private ProviderMeta findProviderMeta(List<ProviderMeta> providerMetas, String methodSign) {

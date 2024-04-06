@@ -20,8 +20,8 @@ import org.apache.zookeeper.CreateMode;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -121,9 +121,11 @@ public class ZkRegistryCenter implements RegistryCenter {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-            HashMap params = JSON.parseObject(new String(bytes), HashMap.class);
-            params.forEach((k, v) -> log.info(k + "->" + v));
-            instance.setParameters(params);
+            Map<String, Object> params = JSON.parseObject(new String(bytes));
+            params.forEach((k, v) -> {
+                log.info(k + "->" + v);
+                instance.getParameters().put(k, v == null ? null : v.toString());
+            });
             return instance;
         }).collect(Collectors.toList());
 

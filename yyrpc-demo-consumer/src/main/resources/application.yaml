@@ -16,6 +16,9 @@ app:
   retries: 2
   timeout: 1000
   grayRatio: 33
+  faultLimit: 10 # 30s 内10次错误则隔离
+  halfOpenInitialDelay: 10000
+  halfOpenDelay: 60000
 
 logging:
   level:
