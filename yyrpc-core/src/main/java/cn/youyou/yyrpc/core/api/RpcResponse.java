@@ -1,5 +1,6 @@
 package cn.youyou.yyrpc.core.api;
 
+import cn.youyou.yyrpc.core.RpcException;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,6 +16,6 @@ public class RpcResponse<T>{
 
     boolean status;
     T data;
-    Exception ex;
+    RpcException ex;
 
 }
