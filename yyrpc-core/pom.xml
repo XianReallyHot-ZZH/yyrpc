@@ -5,10 +5,10 @@
     <parent>
         <groupId>cn.youyou</groupId>
         <artifactId>yyrpc</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>${yyrpc.version}</version>
     </parent>
     <artifactId>yyrpc-core</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>${yyrpc.version}</version>
     <name>yyrpc-core</name>
     <description>yyrpc-core</description>
 

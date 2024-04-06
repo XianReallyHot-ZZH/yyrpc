@@ -5,11 +5,11 @@
     <parent>
         <groupId>cn.youyou</groupId>
         <artifactId>yyrpc</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>${yyrpc.version}</version>
 <!--        <relativePath/> &lt;!&ndash; lookup parent from repository &ndash;&gt;-->
     </parent>
     <artifactId>yyrpc-demo-api</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>${yyrpc.version}</version>
     <name>yyrpc-demo-api</name>
     <description>yyrpc-demo-api</description>
 

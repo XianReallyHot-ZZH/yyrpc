@@ -5,10 +5,10 @@
     <parent>
         <groupId>cn.youyou</groupId>
         <artifactId>yyrpc</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>${yyrpc.version}</version>
     </parent>
     <artifactId>yyrpc-demo-provider</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>${yyrpc.version}</version>
     <name>yyrpc-demo-provider</name>
     <description>yyrpc-demo-provider</description>
 
@@ -28,13 +28,13 @@
         <dependency>
             <groupId>cn.youyou</groupId>
             <artifactId>yyrpc-demo-api</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${yyrpc.version}</version>
         </dependency>
 
         <dependency>
             <groupId>cn.youyou</groupId>
             <artifactId>yyrpc-core</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${yyrpc.version}</version>
         </dependency>
 
         <dependency>

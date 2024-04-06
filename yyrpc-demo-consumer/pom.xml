@@ -5,11 +5,11 @@
     <parent>
         <groupId>cn.youyou</groupId>
         <artifactId>yyrpc</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>${yyrpc.version}</version>
     </parent>
     <groupId>cn.youyou</groupId>
     <artifactId>yyrpc-demo-consumer</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>${yyrpc.version}</version>
     <name>yyrpc-demo-consumer</name>
     <description>yyrpc-demo-consumer</description>
 
@@ -29,13 +29,13 @@
         <dependency>
             <groupId>cn.youyou</groupId>
             <artifactId>yyrpc-demo-api</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${yyrpc.version}</version>
         </dependency>
 
         <dependency>
             <groupId>cn.youyou</groupId>
             <artifactId>yyrpc-core</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${yyrpc.version}</version>
         </dependency>
 
         <dependency>
@@ -58,7 +58,7 @@
         <dependency>
             <groupId>cn.youyou</groupId>
             <artifactId>yyrpc-demo-provider</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${yyrpc.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
