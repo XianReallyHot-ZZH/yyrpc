@@ -12,7 +12,6 @@ import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.util.LinkedMultiValueMap;
@@ -41,22 +40,25 @@ public class ProviderBootstrap implements ApplicationContextAware {
      */
     private MultiValueMap<String, ProviderMeta> skeleton = new LinkedMultiValueMap<>();
 
-    @Value("${server.port}")
-    private String port;
-
     private InstanceMeta instance;
 
-    @Value("${app.id}")
+    private String port;
+
     private String app;
 
-    @Value("${app.namespace}")
     private String namespace;
 
-    @Value("${app.env}")
     private String env;
 
-    @Value("#{${app.metas}}")
     private Map<String, String> metas;
+
+    public ProviderBootstrap(String port, String app, String namespace, String env, Map<String, String> metas) {
+        this.port = port;
+        this.app = app;
+        this.namespace = namespace;
+        this.env = env;
+        this.metas = metas;
+    }
 
 
     // 实现了ApplicationContextAware接口，Spring容器会在创建该Bean之后，自动调用该Bean的setApplicationContext()方法，调用该方法时，会将容器本身作为参数传给该方法

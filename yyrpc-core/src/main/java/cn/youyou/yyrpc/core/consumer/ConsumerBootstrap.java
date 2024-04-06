@@ -35,35 +35,6 @@ public class ConsumerBootstrap implements ApplicationContextAware {
     // 服务接口代码存根，key为接口的全限定名，value为相应接口的代理类
     private Map<String, Object> stub = new HashMap<>();
 
-    /**
-     * TODO:
-     * 后续优化点，将这些服务的环境参数写到服务消费端注解上，作为服务的一部分属性，
-     * 如果服务没有配置自己的属性，那么以全局属性作为自己的属性
-     */
-    @Value("${app.id}")
-    private String app;
-
-    @Value("${app.namespace}")
-    private String namespace;
-
-    @Value("${app.env}")
-    private String env;
-
-    @Value("${app.retries}")
-    private int retries;
-
-    @Value("${app.timeout}")
-    private int timeout;
-
-    @Value("${app.faultLimit}")
-    private int faultLimit;
-
-    @Value("${app.halfOpenInitialDelay}")
-    private int halfOpenInitialDelay;
-
-    @Value("${app.halfOpenDelay}")
-    private int halfOpenDelay;
-
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
@@ -78,7 +49,7 @@ public class ConsumerBootstrap implements ApplicationContextAware {
     public void start() {
         rc = applicationContext.getBean(RegistryCenter.class);
         rc.start();
-        RpcContext rpcContext = createContext();
+        RpcContext rpcContext = applicationContext.getBean(RpcContext.class);
 
         // TODO：优化，扫描
         String[] beanDefinitionNames = applicationContext.getBeanDefinitionNames();
@@ -96,24 +67,6 @@ public class ConsumerBootstrap implements ApplicationContextAware {
     public void stop() {
         rc.stop();
     }
-
-
-    private RpcContext createContext() {
-        LoadBalancer loadBalancer = applicationContext.getBean(LoadBalancer.class);
-        Router router = applicationContext.getBean(Router.class);
-        List<Filter> filters = applicationContext.getBeansOfType(Filter.class).values().stream().toList();
-        RpcContext rpcContext = new RpcContext();
-        rpcContext.setLoadBalancer(loadBalancer);
-        rpcContext.setRouter(router);
-        rpcContext.setFilters(filters);
-        rpcContext.getParameters().put("app.retries", String.valueOf(retries));
-        rpcContext.getParameters().put("app.timeout", String.valueOf(timeout));
-        rpcContext.getParameters().put("app.halfOpenInitialDelay", String.valueOf(halfOpenInitialDelay));
-        rpcContext.getParameters().put("app.faultLimit", String.valueOf(faultLimit));
-        rpcContext.getParameters().put("app.halfOpenDelay", String.valueOf(halfOpenDelay));
-        return rpcContext;
-    }
-
 
     /**
      * 遍历属性，进行代理注入,顺便完成代码存根管理
@@ -142,7 +95,11 @@ public class ConsumerBootstrap implements ApplicationContextAware {
 
     private Object createServiceFromRegistryCenter(Class<?> service, RpcContext rpcContext, RegistryCenter registryCenter) {
         String serviceName = service.getCanonicalName();
-        ServiceMeta serviceMeta = ServiceMeta.builder().app(app).namespace(namespace).env(env).name(serviceName).build();
+        ServiceMeta serviceMeta = ServiceMeta.builder()
+                .app(rpcContext.param("app.id"))
+                .namespace(rpcContext.param("app.namespace"))
+                .env(rpcContext.param("app.env"))
+                .name(serviceName).build();
         List<InstanceMeta> providers = registryCenter.fetchAll(serviceMeta);
         log.info(" ===> map to providers: ");
         providers.forEach(System.out::println);

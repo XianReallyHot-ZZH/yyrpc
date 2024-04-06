@@ -51,7 +51,7 @@ public class InstanceMeta {
      * @return
      */
     public static InstanceMeta http(String host, Integer port) {
-        return new InstanceMeta("http", host, port, "");
+        return new InstanceMeta("http", host, port, "yyrpc");
     }
 
     public String toMetas() {

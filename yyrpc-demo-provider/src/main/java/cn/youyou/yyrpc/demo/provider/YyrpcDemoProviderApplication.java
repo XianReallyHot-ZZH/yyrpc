@@ -3,7 +3,7 @@ package cn.youyou.yyrpc.demo.provider;
 import cn.youyou.yyrpc.core.api.RpcRequest;
 import cn.youyou.yyrpc.core.api.RpcResponse;
 import cn.youyou.yyrpc.core.provider.ProviderConfig;
-import cn.youyou.yyrpc.core.provider.ProviderInvoker;
+import cn.youyou.yyrpc.core.transport.SpringBootTransport;
 import cn.youyou.yyrpc.demo.api.User;
 import cn.youyou.yyrpc.demo.api.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +12,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -33,20 +32,6 @@ public class YyrpcDemoProviderApplication {
     }
 
     @Autowired
-    public ProviderInvoker providerInvoker;
-
-    /**
-     * 模拟一个服务提供端接受基于http协议远程调用的入口
-     *
-     * @param request
-     * @return
-     */
-    @RequestMapping("/")
-    public RpcResponse<Object> invoke(@RequestBody RpcRequest request) {
-        return providerInvoker.invoke(request);
-    }
-
-    @Autowired
     private UserService userService;
 
     // 模拟故障恢复和发生
@@ -58,6 +43,10 @@ public class YyrpcDemoProviderApplication {
         response.setData("OK:" + ports);
         return response;
     }
+
+
+    @Autowired
+    private SpringBootTransport transport;
 
     @Bean
     ApplicationRunner providerRunner() {
@@ -73,7 +62,7 @@ public class YyrpcDemoProviderApplication {
         request.setService("cn.youyou.yyrpc.demo.api.UserService");
         request.setMethodSign("findById@1_int");
         request.setArgs(new Object[]{100});
-        RpcResponse<Object> rpcResponse = invoke(request);
+        RpcResponse<Object> rpcResponse = transport.invoke(request);
         System.out.println("return: " + rpcResponse.getData());
 
         // test 2 parameters method
@@ -82,7 +71,7 @@ public class YyrpcDemoProviderApplication {
         request1.setService("cn.youyou.yyrpc.demo.api.UserService");
         request1.setMethodSign("findById@2_int_java.lang.String");
         request1.setArgs(new Object[]{100, "CC"});
-        RpcResponse<Object> rpcResponse1 = invoke(request1);
+        RpcResponse<Object> rpcResponse1 = transport.invoke(request1);
         System.out.println("return : " + rpcResponse1.getData());
 
         // test 3 for List<User> method&parameter
@@ -94,7 +83,7 @@ public class YyrpcDemoProviderApplication {
         userList.add(new User(100, "YY100"));
         userList.add(new User(101, "YY101"));
         request3.setArgs(new Object[]{userList});
-        RpcResponse<Object> rpcResponse3 = invoke(request3);
+        RpcResponse<Object> rpcResponse3 = transport.invoke(request3);
         System.out.println("return : " + rpcResponse3.getData());
 
         // test 4 for Map<String, User> method&parameter
@@ -106,7 +95,7 @@ public class YyrpcDemoProviderApplication {
         userMap.put("P100", new User(100, "YY100"));
         userMap.put("P101", new User(101, "YY101"));
         request4.setArgs(new Object[]{userMap});
-        RpcResponse<Object> rpcResponse4 = invoke(request4);
+        RpcResponse<Object> rpcResponse4 = transport.invoke(request4);
         System.out.println("return : " + rpcResponse4.getData());
 
     }

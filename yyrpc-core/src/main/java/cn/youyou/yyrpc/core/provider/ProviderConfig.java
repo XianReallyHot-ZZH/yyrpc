@@ -2,17 +2,38 @@ package cn.youyou.yyrpc.core.provider;
 
 import cn.youyou.yyrpc.core.api.RegistryCenter;
 import cn.youyou.yyrpc.core.registry.zk.ZkRegistryCenter;
+import cn.youyou.yyrpc.core.transport.SpringBootTransport;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
+
+import java.util.Map;
 
 @Configuration
 @Slf4j
+@Import({SpringBootTransport.class})
 public class ProviderConfig {
+
+    @Value("${server.port:8081}")
+    private String port;
+
+    @Value("${app.id:app1}")
+    private String app;
+
+    @Value("${app.namespace:public}")
+    private String namespace;
+
+    @Value("${app.env:dev}")
+    private String env;
+
+    @Value("#{${app.metas:{dc:'bj',gray:'false',unit:'B001'}}}")
+    private Map<String, String> metas;
 
     /**
      * 交由spring容器管理，在类的生命周期内触发类上实现的相关接口和相关注解的背后逻辑
@@ -21,7 +42,7 @@ public class ProviderConfig {
      */
     @Bean
     public ProviderBootstrap providerBootstrap() {
-        return new ProviderBootstrap();
+        return new ProviderBootstrap(port,app, namespace,env, metas);
     }
 
     @Bean

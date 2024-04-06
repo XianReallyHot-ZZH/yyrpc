@@ -11,7 +11,7 @@ GET http://localhost:8088/gray/?ratio=100
 GET http://localhost:8082/ports?ports=8080,8094
 
 ### 获取用户信息
-POST http://localhost:8081/
+POST http://localhost:8081/yyrpc
 Content-Type: application/json
 
 {
@@ -21,7 +21,7 @@ Content-Type: application/json
 }
 
 ### 获取订单信息
-POST http://localhost:8081/
+POST http://localhost:8081/yyrpc
 Content-Type: application/json
 
 {
@@ -31,7 +31,7 @@ Content-Type: application/json
 }
 
 ### mock
-POST http://localhost:8081/
+POST http://localhost:8081/yyrpc
 Content-Type: application/json
 
 {
