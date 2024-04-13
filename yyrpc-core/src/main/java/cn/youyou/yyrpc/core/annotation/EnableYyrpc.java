@@ -11,6 +11,6 @@ import java.lang.annotation.*;
 @Target(ElementType.TYPE)
 @Inherited
 @Import({ProviderConfig.class, ConsumerConfig.class})
-public @interface EnableKkrpc {
+public @interface EnableYyrpc {
 
 }
