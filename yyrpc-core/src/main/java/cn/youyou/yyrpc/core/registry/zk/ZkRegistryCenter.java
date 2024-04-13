@@ -37,8 +37,15 @@ public class ZkRegistryCenter implements RegistryCenter {
 
     private List<TreeCache> caches = new ArrayList<>();
 
+    private boolean running = false;
+
     @Override
-    public void start() {
+    public synchronized void start() {
+        if (running) {
+            log.info(" ===> zk client has started to server[{}], ignore.", server + "/" + root);
+            return;
+        }
+
         // 项目启动时，完成客户端相关的初始化工作
         RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
         client = CuratorFrameworkFactory.builder()
@@ -49,15 +56,22 @@ public class ZkRegistryCenter implements RegistryCenter {
         log.info("===>[ZkRegistryCenter] zk client starting to server[" + server + "/" + root + "].");
         client.start();
         log.info("===>[ZkRegistryCenter] zk client started.");
+        running = true;
     }
 
     @Override
-    public void stop() {
+    public synchronized void stop() {
+        if (!running) {
+            log.info(" ===> zk client isn't running to server[" + server + "/" + root + "], ignored.");
+            return;
+        }
+
         // 项目关闭时，关闭相关的资源
         log.info("===>[ZkRegistryCenter] zk client stopping.");
         caches.forEach(TreeCache::close);
         client.close();
         log.info("===>[ZkRegistryCenter] zk client stopped.");
+        running = false;
     }
 
     @Override
@@ -142,12 +156,16 @@ public class ZkRegistryCenter implements RegistryCenter {
                 .build();
         cache.getListenable().addListener(new TreeCacheListener() {
             @Override
-            public void childEvent(CuratorFramework client, TreeCacheEvent event) throws Exception {
-                // 监听到变动，进而触发这里的逻辑
-                log.info(" ===>[ZkRegistryCenter] subscribe from zk, event: " + event);
-                List<InstanceMeta> nodes = fetchAll(service);
-                // 触发定义好的订阅更新逻辑
-                listener.fire(new Event(nodes));
+            public void childEvent(CuratorFramework client, TreeCacheEvent event) {
+                synchronized (ZkRegistryCenter.class) {
+                    if (running) {
+                        // 监听到变动，进而触发这里的逻辑
+                        log.info(" ===>[ZkRegistryCenter] subscribe from zk, event: " + event);
+                        List<InstanceMeta> nodes = fetchAll(service);
+                        // 触发定义好的订阅更新逻辑
+                        listener.fire(new Event(nodes));
+                    }
+                }
             }
         });
         cache.start();
