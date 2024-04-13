@@ -15,6 +15,7 @@ yyrpc:
       dc: bj
       gray: false
       unit: B001
+      tc: 0
 
 logging:
   level:

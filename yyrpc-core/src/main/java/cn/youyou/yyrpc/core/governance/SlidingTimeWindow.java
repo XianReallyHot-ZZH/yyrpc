@@ -82,6 +82,30 @@ public class SlidingTimeWindow {
         return sum;
     }
 
+    /**
+     * 返回当前滑窗内的记录数据
+     * 不需要记录+1，但是需要维护滑窗往前滚动
+     * @return
+     */
+    public int calcSum() {
+        long ts = System.currentTimeMillis() / 1000;
+        if (ts > _curr_ts && ts < _curr_ts + size) {
+            int offset = (int)(ts - _curr_ts);
+            log.debug("window ts:" + ts + ", curr_ts:" + _curr_ts + ", size:" + size + ", offset:" + offset);
+            this.ringBuffer.reset(_curr_mark + 1, offset);  // 抹除上一个轮次的数据
+            _curr_ts = ts;
+            _curr_mark = (_curr_mark + offset) % size;
+        } else if (ts >= _curr_ts + size) {
+            log.debug("window ts:" + ts + ", curr_ts:" + _curr_ts + ", size:" + size);
+            this.ringBuffer.reset();
+            this._start_ts  = ts;
+            this._curr_ts   = ts;
+            this._curr_mark = 0;
+        }
+        log.debug("calc sum for window:" + this);
+        return ringBuffer.sum();
+    }
+
     public RingBuffer getRingBuffer() {
         return ringBuffer;
     }

@@ -1,5 +1,6 @@
 package cn.youyou.yyrpc.demo.provider;
 
+import cn.youyou.yyrpc.core.RpcException;
 import cn.youyou.yyrpc.core.api.RpcRequest;
 import cn.youyou.yyrpc.core.api.RpcResponse;
 import cn.youyou.yyrpc.core.config.ProviderConfig;
@@ -98,6 +99,19 @@ public class YyrpcDemoProviderApplication {
         RpcResponse<Object> rpcResponse4 = transport.invoke(request4);
         System.out.println("return : " + rpcResponse4.getData());
 
+        // test 5 流控自测
+        System.out.println("Provider Case 5. >>===[流控触发自测]===");
+        for (int i = 0; i < 100; i++) {
+            try {
+                RpcResponse<Object> response = transport.invoke(request);
+                System.out.println(i + " ***>>> " +response.getData());
+                Thread.sleep(1000);
+            } catch (RpcException e) {
+                System.out.println(i + " ***>>> " +e.getMessage() + " -> " + e.getErrorCode());
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
 }
