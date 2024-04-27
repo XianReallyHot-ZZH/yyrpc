@@ -17,6 +17,9 @@ yyrpc:
       unit: B001
       tc: 0
 
+kkregistry:
+  servers: localhost:8484
+
 logging:
   level:
     root: info

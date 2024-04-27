@@ -21,6 +21,10 @@ yyrpc:
     halfOpenInitialDelay: 10000
     halfOpenDelay: 60000
 
+kkregistry:
+  servers: localhost:8484
+
+
 logging:
   level:
     root: info
