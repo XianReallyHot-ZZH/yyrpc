@@ -21,7 +21,7 @@ yyrpc:
     halfOpenInitialDelay: 10000
     halfOpenDelay: 60000
 
-kkregistry:
+yyregistry:
   servers: localhost:8484
 
 

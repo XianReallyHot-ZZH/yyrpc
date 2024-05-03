@@ -5,6 +5,7 @@ import cn.youyou.yyrpc.core.cluster.GrayRouter;
 import cn.youyou.yyrpc.core.cluster.RoundRibonLoadBalancer;
 import cn.youyou.yyrpc.core.consumer.ConsumerBootstrap;
 import cn.youyou.yyrpc.core.filter.ParameterFilter;
+import cn.youyou.yyrpc.core.registry.yy.YyRegistryCenter;
 import cn.youyou.yyrpc.core.registry.zk.ZkRegistryCenter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -79,7 +80,8 @@ public class ConsumerConfig {
     @ConditionalOnMissingBean
     public RegistryCenter registryCenter() {
 //        return new RegistryCenter.StaticRegistryCenter(List.of(servers.split(",")));
-        return new ZkRegistryCenter();
+//        return new ZkRegistryCenter();
+        return new YyRegistryCenter();
     }
 
     @Bean

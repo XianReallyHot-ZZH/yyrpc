@@ -17,7 +17,7 @@ yyrpc:
       unit: B001
       tc: 0
 
-kkregistry:
+yyregistry:
   servers: localhost:8484
 
 logging:

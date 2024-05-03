@@ -3,6 +3,7 @@ package cn.youyou.yyrpc.core.config;
 import cn.youyou.yyrpc.core.api.RegistryCenter;
 import cn.youyou.yyrpc.core.provider.ProviderBootstrap;
 import cn.youyou.yyrpc.core.provider.ProviderInvoker;
+import cn.youyou.yyrpc.core.registry.yy.YyRegistryCenter;
 import cn.youyou.yyrpc.core.registry.zk.ZkRegistryCenter;
 import cn.youyou.yyrpc.core.transport.SpringBootTransport;
 import lombok.extern.slf4j.Slf4j;
@@ -66,7 +67,8 @@ public class ProviderConfig {
     @Bean
     @ConditionalOnMissingBean
     public RegistryCenter providerRc() {
-        return new ZkRegistryCenter();
+//        return new ZkRegistryCenter();
+        return new YyRegistryCenter();
     }
 
 
